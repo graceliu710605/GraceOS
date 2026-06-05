@@ -20,12 +20,21 @@ def scan():
 
     software_list = []
 
+    start_parse = False
+
     for line in lines:
+
+        if "Name" in line and "Id" in line:
+            start_parse = True
+            continue
+
+        if not start_parse:
+            continue
 
         if "----" in line:
             continue
 
-        if len(line.strip()) < 10:
+        if len(line.strip()) < 5:
             continue
 
         software_list.append(
@@ -39,11 +48,19 @@ def scan():
         r"E:\创业项目\GraceOS\09_Database\software_assets"
     )
 
-    output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir.mkdir(
+        parents=True,
+        exist_ok=True
+    )
 
     output_file = output_dir / "software_inventory.json"
 
-    with open(output_file, "w", encoding="utf-8") as f:
+    with open(
+        output_file,
+        "w",
+        encoding="utf-8"
+    ) as f:
+
         json.dump(
             software_list,
             f,
@@ -52,5 +69,8 @@ def scan():
         )
 
     print(f"发现软件 {len(software_list)} 个")
-
     print(f"输出文件: {output_file}")
+
+
+if __name__ == "__main__":
+    scan()
