@@ -1,79 +1,137 @@
 # GraceOS 开发规范
 
+> 所有开发任务默认按本规范执行。
+> 自动更新 PROJECT_STATUS.md、生成报告、提交 Git。
+> 无需再次特别说明。
+
+---
+
 ## 产品定位
 
 GraceOS 是数字资产管理系统。
 
-目标：**发现问题 → 分析问题 → 解决问题**
+目标闭环：
+
+**发现问题 → 分析问题 → 给出建议 → 执行处理**
 
 ### 优先开发
+
 - 文件资产管理
 - 软件资产管理
 - 磁盘资产管理
 - AI 分析建议
 - 自动整理
-- 资产处理
-
-### 暂缓开发（保留页面，不继续开发）
-- 知识库中心
-- Prompt 中心
-- 项目中心
-- 工作流中心
+- 资产处理能力
 
 ---
 
-## 开发完成后必须执行
+## 产品原则
 
-每次开发完成后更新以下文件：
+❌ 避免：只统计，不处理
 
-| 文件 | 说明 |
-|------|------|
-| `PROJECT_STATUS.md` | 项目状态（当前版本/已完成功能/待办事项） |
-| `docs/UI_REVIEW.md` | UI 巡检报告 |
-| `docs/QA_REPORT.md` | 测试报告 |
-| `docs/RELEASE_NOTE.md` | 发布说明 |
+✅ 所有分析功能必须形成完整闭环：
+
+**查看 → 建议 → 执行 → 处理**
+
+---
+
+## 冻结模块
+
+以下模块保留菜单和页面，显示 **Future Module（待后续版本开发）**：
+
+- 项目中心
+- 知识库中心
+- Prompt 中心
+- 工作流中心
+- 备份中心
+- 设置中心
+
+暂不继续开发，除非产品规划调整。
+
+---
+
+## AI 建议规范
+
+对于以下资产类型，必须输出完整建议：
+
+| 资产类型 | 问题 | 原因 | 建议 | 预计释放空间 | 推荐处理方式 |
+|---------|------|------|------|-------------|-------------|
+| 重复文件 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 长期未使用文件 | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 多版本软件 | ✅ | ✅ | ✅ | - | ✅ |
+| 大文件 | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ---
 
 ## 删除安全规范
 
-所有删除操作必须：
+支持三种处理模式：
 
-1. **显示预计删除数量**
-2. **显示预计释放空间**
-3. **操作前确认**
+| 模式 | 路径 | 说明 |
+|------|------|------|
+| 回收站 | `E:\回收站` | 可恢复 |
+| 直接删除 | 永久 | 谨慎使用 |
+| 归档 | `E:\归档` | 保留目录结构 |
 
-支持三种删除模式：
+执行前必须显示：
 
-| 模式 | 说明 |
-|------|------|
-| 回收站 | 移至 `E:\回收站` 目录（可恢复） |
-| 直接删除 | 永久删除（谨慎使用） |
-| 归档 | 移至 `E:\归档` 目录（保留结构） |
+1. 预计删除文件数
+2. 预计释放空间
+3. 危险操作确认
 
 ---
 
-## 白名单机制
+## 白名单
 
 支持设置**永不清理目录**：
 
-- 知识库（`E:\知识库obsidian`）
-- 创业项目（`E:\创业项目`）
+- `E:\知识库obsidian`
+- `E:\创业项目`
 - 照片目录
+- 家庭资料目录
 - 用户自定义目录
+
+白名单目录：不参与 AI 建议，不参与自动处理。
 
 ---
 
 ## 系统保护
 
-禁止推荐删除以下系统路径：
+禁止推荐处理以下系统路径：
 
-- `C:\Windows`
-- `C:\Windows\System32`
-- `pagefile.sys`
-- `hiberfil.sys`
-- `swapfile.sys`
-- `C:\Program Files\WindowsApps`
+`C:\Windows`, `C:\Windows\System32`, `C:\Program Files`, `C:\Program Files (x86)`, `pagefile.sys`, `hiberfil.sys`, `EFI`, `Recovery`, `Boot`
+
+以及其它系统关键目录。
+
+---
+
+## 开发完成后必须执行
+
+| 操作 | 文件 |
+|------|------|
+| 更新项目状态 | `PROJECT_STATUS.md` |
+| 生成 UI 报告 | `docs/UI_REVIEW.md` |
+| 生成测试报告 | `docs/QA_REPORT.md` |
+| 生成发布说明 | `docs/RELEASE_NOTE.md` |
+
+---
+
+## 目录结构
+
+```
+GraceOS_V1/
+├── dashboard.py              # 主应用
+├── main.py                   # 入口
+├── scanners/                 # 扫描器
+├── analyzers/                # 分析器
+├── docs/                     # 设计文档和报告
+├── screenshots/              # 页面截图
+├── DEVELOPMENT_RULES.md      # 开发规范（本文件）
+├── PROJECT_STATUS.md         # 项目状态
+├── ROADMAP.md                # 路线图
+├── CHANGELOG.md              # 变更日志
+└── README.md
+```
 
 ---
 
@@ -83,31 +141,19 @@ GraceOS 是数字资产管理系统。
 
 ```bash
 git add .
-git commit -m "描述本次变更"
+git commit -m "模块名: 变更说明"
 ```
 
-Commit 信息格式：`模块名: 变更说明`
+如已配置远程仓库：`git push`
 
 ---
 
-## 目录结构
+## 任务执行规范
 
-```
-GraceOS_V1/
-├── dashboard.py          # 主应用
-├── main.py               # 入口
-├── scanners/             # 扫描器
-├── analyzers/            # 分析器
-├── docs/                 # 设计文档和报告
-│   ├── PRD.md
-│   ├── ARCHITECTURE.md
-│   ├── DATABASE.md
-│   ├── UI_REVIEW.md
-│   ├── QA_REPORT.md
-│   └── RELEASE_NOTE.md
-├── screenshots/          # 截图
-├── PROJECT_STATUS.md     # 项目状态
-├── ROADMAP.md            # 路线图
-├── DEVELOPMENT_RULES.md  # 开发规范（本文件）
-└── CHANGELOG.md          # 变更日志
-```
+所有开发任务默认按本规范执行，无需再次特别说明以下步骤：
+
+1. 更新 `PROJECT_STATUS.md`
+2. 生成 `docs/UI_REVIEW.md`
+3. 生成 `docs/QA_REPORT.md`
+4. 生成 `docs/RELEASE_NOTE.md`
+5. `git add . && git commit`

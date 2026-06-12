@@ -635,3 +635,31 @@ GraceOS_V1/
 ├── CHANGELOG.md
 └── README.md
 ```
+
+
+---
+
+## 工程规范最终整理 ✅
+
+**日期**: 2026-06-12 | **Commit**: (pending)
+
+### 更新内容
+
+| 操作 | 文件 | 说明 |
+|------|------|------|
+| 📝 更新 | `DEVELOPMENT_RULES.md` | 完整版开发规范（产品定位/产品原则/AI建议规范/删除安全/白名单/系统保护/Git规范） |
+| 🆕 新建 | `docs/QA_REPORT.md` | 测试报告（10个Tab功能测试 + 已知问题） |
+| ✅ 确认 | `ROADMAP.md` | 已存在 |
+| ✅ 确认 | `PROJECT_STATUS.md` | 已存在 |
+| ✅ 确认 | `docs/` | 已存在（11 files） |
+| ✅ 确认 | `screenshots/` | 已存在（10 files） |
+
+### 规范摘要
+
+- **闭环原则**: 发现问题 → 分析问题 → 给出建议 → 执行处理
+- **冻结模块**: 项目/知识库/Prompt/工作流/备份/设置 → Future Module
+- **AI建议规范**: 每种资产类型必须输出问题+原因+建议+预计释放空间+处理方式
+- **删除安全**: 回收站/删除/归档三种模式，执行前显示预计空间+确认
+- **白名单**: 知识库/创业项目/照片目录 → 不参与AI建议和自动处理
+- **系统保护**: Windows/System32/Program Files/pagefile.sys 等禁止推荐删除
+- **交付规范**: 每次开发后更新 PROJECT_STATUS.md + 生成 UI_REVIEW/QA_REPORT/RELEASE_NOTE + Git提交
