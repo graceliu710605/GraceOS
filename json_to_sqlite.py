@@ -2,23 +2,21 @@ import sqlite3
 import ijson
 
 JSON_FILE = r"E:\创业项目\GraceOS\09_Database\file_assets\file_inventory.json"
-
 DB_FILE = r"E:\创业项目\GraceOS\09_Database\graceos.db"
 
 print("连接数据库...")
 
 conn = sqlite3.connect(DB_FILE)
-
 cursor = conn.cursor()
 
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS files (
-id INTEGER PRIMARY KEY AUTOINCREMENT,
-file_name TEXT,
-file_path TEXT,
-file_size INTEGER,
-last_modified TEXT,
-file_type TEXT
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    file_name TEXT,
+    file_path TEXT,
+    file_size INTEGER,
+    last_modified TEXT,
+    file_type TEXT
 )
 """)
 
@@ -30,75 +28,69 @@ count = 0
 
 with open(JSON_FILE, "rb") as f:
 
-```
-objects = ijson.items(f, "item")
+    objects = ijson.items(f, "item")
 
-batch = []
+    batch = []
 
-for item in objects:
+    for item in objects:
 
-    batch.append(
-        (
-            item.get("file_name"),
-            item.get("file_path"),
-            item.get("file_size"),
-            item.get("last_modified"),
-            item.get("file_type")
-        )
-    )
-
-    if len(batch) >= 5000:
-
-        cursor.executemany(
-            """
-            INSERT INTO files
+        batch.append(
             (
-                file_name,
-                file_path,
-                file_size,
-                last_modified,
-                file_type
+                item.get("file_name"),
+                item.get("file_path"),
+                item.get("file_size"),
+                item.get("last_modified"),
+                item.get("file_type")
             )
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            batch
         )
 
-        conn.commit()
+        if len(batch) >= 5000:
 
-        count += len(batch)
+            cursor.executemany(
+                """
+                INSERT INTO files
+                (
+                    file_name,
+                    file_path,
+                    file_size,
+                    last_modified,
+                    file_type
+                )
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                batch
+            )
 
-        print(f"已导入 {count:,} 条")
+            conn.commit()
 
-        batch = []
-```
+            count += len(batch)
+
+            print(f"已导入 {count:,} 条")
+
+            batch = []
 
 if batch:
 
-```
-cursor.executemany(
-    """
-    INSERT INTO files
-    (
-        file_name,
-        file_path,
-        file_size,
-        last_modified,
-        file_type
+    cursor.executemany(
+        """
+        INSERT INTO files
+        (
+            file_name,
+            file_path,
+            file_size,
+            last_modified,
+            file_type
+        )
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        batch
     )
-    VALUES (?, ?, ?, ?, ?)
-    """,
-    batch
-)
 
-conn.commit()
+    conn.commit()
 
-count += len(batch)
-```
+    count += len(batch)
 
-cursor.execute(
-"SELECT COUNT(*) FROM files"
-)
+cursor.execute("SELECT COUNT(*) FROM files")
 
 total = cursor.fetchone()[0]
 
