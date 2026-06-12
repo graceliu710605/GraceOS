@@ -663,3 +663,32 @@ GraceOS_V1/
 - **白名单**: 知识库/创业项目/照片目录 → 不参与AI建议和自动处理
 - **系统保护**: Windows/System32/Program Files/pagefile.sys 等禁止推荐删除
 - **交付规范**: 每次开发后更新 PROJECT_STATUS.md + 生成 UI_REVIEW/QA_REPORT/RELEASE_NOTE + Git提交
+
+
+---
+
+## Registry Fix Update ✅
+
+**日期**: 2026-06-12
+
+### 关键修复
+
+| BUG | 修复方式 | 结果 |
+|-----|---------|------|
+| 软件安装路径全部为空 | `_query_registry` 改用 `winreg` 模块 | 36/142 有安装路径 |
+
+### 验证结果
+
+- ✅ 点击软件名称 → 打开安装目录（真实可用）
+- ✅ 重复文件处理: 删除/归档 功能正常
+- ✅ 未使用文件处理: 删除/归档/打开 功能正常
+- ✅ 多版本软件处理: 检测+建议 功能正常
+- ✅ 系统保护: Windows/System32自动排除
+- ✅ Dashboard语法检查通过
+- ✅ Scanner语法检查通过
+
+### 按规范输出
+
+- `docs/UI_REVIEW.md` - UI巡检报告
+- `docs/QA_REPORT.md` - 测试报告
+- `docs/RELEASE_NOTE.md` - 发布说明
