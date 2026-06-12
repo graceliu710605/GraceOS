@@ -1,5 +1,5 @@
 """
-GraceOS V2 Beta - Personal Digital Operating System
+个人数字资产管家 (GraceOS V2 Beta)
 Asset Management Platform: Analyze -> Suggest -> Execute
 """
 import sys, os
@@ -74,8 +74,8 @@ def _render_file_table(df, section_key, max_rows=50):
             fp = df.iloc[idx]["file_path"]
             _open_file(fp)
 
-st.set_page_config(page_title="GraceOS V2 Beta", layout="wide")
-st.title("GraceOS V2 Beta - 个人数字资产管理平台")
+st.set_page_config(page_title="个人数字资产管家", layout="wide")
+st.title("个人数字资产管家")
 
 conn = sqlite3.connect(DB_FILE)
 cur = conn.cursor()

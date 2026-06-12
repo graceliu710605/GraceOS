@@ -1,4 +1,4 @@
-# GraceOS Windows EXE 打包方案
+# 个人数字资产管家 Windows EXE 打包方案
 
 > 研究日期: 2026-06-12
 
@@ -56,7 +56,7 @@ pyinstaller --onefile \
   --hidden-import streamlit \
   dashboard.py
 
-# 输出: dist/GraceOS.exe (~55MB)
+# 输出: dist/个人数字资产管家.exe (~55MB)
 ```
 
 ## 注意事项

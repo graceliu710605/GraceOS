@@ -1,12 +1,12 @@
 @echo off
 chcp 65001 >nul
-title GraceOS V2 Beta
+title 个人数字资产管家
 
 cd /d "%~dp0"
 
 echo.
 echo ============================================
-echo          GraceOS V2 Beta
+echo       个人数字资产管家
 echo    Personal Digital Operating System
 echo ============================================
 echo.
