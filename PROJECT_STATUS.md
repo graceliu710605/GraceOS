@@ -493,3 +493,104 @@ SQLite
 cd "e:\知识库obsidian_Projects\graceos_Code\GraceOS_V1"
 streamlit run dashboard.py
 ```
+
+
+---
+
+## GraceOS V2 Alpha 已完成 ✓
+
+**版本**: V2 Alpha | **Commit**: `50795bb` | **日期**: 2026-06-12
+
+### V2 新增功能
+
+| 编号 | 模块 | Tab | 状态 | 说明 |
+|------|------|-----|------|------|
+| M1 | 首页仪表盘 | 🏠 首页 | ✅ | 健康评分 0-100 + 四维评分 + 关键指标 + 问题列表 |
+| M2 | 软件健康分析 | 📋 软件 | ✅ | 多版本检测 + 最早安装软件 + 建议保留/删除 |
+| M3 | 存储空间分析 | 📊 存储 | ✅ | 目录级别空间统计 + Top20目录聚合 |
+| M4 | 自动备份中心 | 💾 备份 | ✅ | Git Auto Commit + SQLite备份 + 备份历史 |
+| M5 | 项目管理中心 | 📁 项目 | ✅ | 项目扫描 + Git状态 + 大小统计 |
+| M6 | 知识库中心 | 🧠 知识库 | ✅ | Obsidian vault 统计（笔记数/附件/大小） |
+| M7 | Prompt 中心 | 📝 Prompt | ✅ | 添加/分类/搜索 Prompt 资产 |
+| - | 文件资产中心 | 📂 文件 | ✅ | V1 功能保留 + 表格模式 |
+| - | 软件资产中心 | 📋 软件 | ✅ | V1 功能保留 + 健康分析扩展 |
+| - | 磁盘资产中心 | 📑 磁盘 | ✅ | V1 功能保留 + C盘预警 |
+| - | 设置中心 | ⚙️ 设置 | ✅ | 骨架页面（待填充配置项） |
+
+### 新增文件
+
+| 文件 | 说明 |
+|------|------|
+| `analyzers/health_scorer.py` | 健康评分引擎（计算+历史+趋势） |
+| `docs/GraceOS_V2_PRD.md` | V2 产品需求文档 |
+| `docs/GraceOS_V2_ARCHITECTURE.md` | V2 系统架构 |
+| `docs/GraceOS_V2_DATABASE.md` | V2 数据库设计 |
+| `ROADMAP.md` | V1→V4 路线图 |
+| `GraceOS_BUSINESS_PLAN.md` | 商业计划书 |
+| `GraceOS_V2_UI_DESIGN.md` | UI 设计文档 |
+
+### 数据库新增表
+
+| 表 | 字段数 | 说明 |
+|------|--------|------|
+| `health_scores` | 15 | 健康评分历史（含四维度评分+原始指标） |
+| `project_assets` | 12 | 项目管理 |
+| `prompt_assets` | 11 | Prompt 资产管理 |
+| `knowledge_stats` | 8 | 知识库统计 |
+| `backup_history` | 6 | 备份操作日志 |
+
+### 启动方式
+
+```powershell
+cd "e:\知识库obsidian\02_Projects\graceos\05_Code\GraceOS_V1"
+streamlit run dashboard.py
+```
+
+### Git 信息
+
+- **分支**: main
+- **最新 Commit**: `50795bb` — GraceOS V2 Alpha
+- **变更**: 13 files, +1550/-198
+- **Push**: 远程仓库不可达
+
+
+---
+
+## GraceOS V2 Beta 已完成 ✓
+
+**版本**: V2 Beta | **日期**: 2026-06-12
+
+### V2 Beta 新增功能
+
+| 功能 | 状态 | 说明 |
+|------|------|------|
+| 软件安装路径修复 | ✅ | PowerShell注册表JSON编码修复 |
+| 重复文件处理中心 | ✅ | 保留/删除/回收站/归档/空间预览 |
+| 多版本软件处理 | ✅ | 检测+建议保留最新+winget搜索 |
+| 长期未使用文件处理 | ✅ | 删除/归档/打开目录/系统保护 |
+| AI建议中心 | ✅ | 首页自动分析+建议+一键跳转 |
+| 系统保护白名单 | ✅ | Windows/System32/pagefile自动排除 |
+| 删除预演 | ✅ | 操作前显示预计空间/文件数 |
+| 模块冻结 | ✅ | 备份/项目/知识库/Prompt/设置→Future Module |
+
+### 产品升级
+
+**V1 RC1**: 资产分析工具（看清问题）
+**V2 Alpha**: 智能评分平台（评估问题）
+**V2 Beta**: 资产管理平台（解决问题）
+
+闭环：发现问题 → AI建议 → 一键执行
+
+### 修改文件
+
+| 文件 | 说明 |
+|------|------|
+| `scanners/software_scanner.py` | 修复注册表JSON编码问题 |
+| `dashboard.py` | P0/P1功能完整实现 (17KB) |
+| `V2_BETA_RELEASE_NOTE.md` | Beta发布说明 |
+
+### 启动
+
+```powershell
+streamlit run dashboard.py
+```

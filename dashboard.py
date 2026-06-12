@@ -1,18 +1,29 @@
 """
-GraceOS V2 - Personal Digital Operating System
-Tabs: Home | Files | Software | Disks | Storage | Backup | Projects | Knowledge | Prompts | Settings
+GraceOS V2 Beta - Personal Digital Operating System
+Asset Management Platform: Analyze -> Suggest -> Execute
 """
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import streamlit as st
 import sqlite3
 import pandas as pd
-import os
 import subprocess
+import shutil
 from datetime import date
-from analyzers.health_scorer import calculate as calc_health, get_latest as get_health
+from analyzers.health_scorer import calculate as calc_health
 
 DB_FILE = r"E:\创业项目\GraceOS\09_Database\graceos.db"
+ARCHIVE_DIR = r"E:\归档"
+RECYCLE_DIR = r"E:\回收站"
+
+# System protection paths
+SYS_PROTECT = ["C:/Windows","C:/Windows/System32","pagefile.sys","hiberfil.sys","swapfile.sys","C:/Program Files/WindowsApps","C:/ProgramData/Microsoft"]
+def _is_protected(fp):
+    fp_l = fp.lower().replace("\\","/")
+    for p in SYS_PROTECT:
+        if p.lower() in fp_l: return True
+    return False
+
 SHORTCUT_FILTER = " AND file_name NOT LIKE '%=%' AND file_name NOT LIKE 'ms-%' AND file_name NOT LIKE 'shell:%' AND file_name NOT LIKE 'file:///%'"
 
 def _open_file(path):
@@ -24,6 +35,29 @@ def _format_install_date(val):
     s = str(val).strip()
     if len(s) == 8 and s.isdigit(): return f"{s[:4]}-{s[4:6]}-{s[6:8]}"
     return s
+
+def _safe_delete(fp):
+    """Move to recycle bin (using send2trash approach: move to archive recycle)"""
+    try:
+        target = os.path.join(RECYCLE_DIR, os.path.basename(fp))
+        os.makedirs(RECYCLE_DIR, exist_ok=True)
+        if os.path.exists(target):
+            target = os.path.join(RECYCLE_DIR, str(int(os.path.getmtime(fp))) + "_" + os.path.basename(fp))
+        shutil.move(fp, target)
+        return True, target
+    except Exception as e:
+        return False, str(e)
+
+def _archive_file(fp):
+    """Move to archive dir preserving structure"""
+    try:
+        rel = os.path.relpath(fp, "C:\\")
+        target = os.path.join(ARCHIVE_DIR, rel)
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+        shutil.move(fp, target)
+        return True, target
+    except Exception as e:
+        return False, str(e)
 
 def _render_file_table(df, section_key, max_rows=50):
     if df.empty: st.info("没有找到匹配的文件"); return
@@ -37,18 +71,18 @@ def _render_file_table(df, section_key, max_rows=50):
         idx = event.selection.rows[0]
         if idx != st.session_state.get(sel_key, -1):
             st.session_state[sel_key] = idx
-            _open_file(df.iloc[idx]["file_path"])
+            fp = df.iloc[idx]["file_path"]
+            _open_file(fp)
 
-st.set_page_config(page_title="GraceOS V2", layout="wide")
-st.title("GraceOS V2 - 个人数字操作系统")
+st.set_page_config(page_title="GraceOS V2 Beta", layout="wide")
+st.title("GraceOS V2 Beta - 个人数字资产管理平台")
 
 conn = sqlite3.connect(DB_FILE)
 cur = conn.cursor()
 
-# ===== 10 Tabs =====
 tabs = st.tabs(["🏠 首页", "📂 文件", "📋 软件", "📑 磁盘", "📊 存储", "💾 备份", "📁 项目", "🧠 知识库", "📝 Prompt", "⚙️ 设置"])
 
-# ========== TAB 0: 首页仪表盘 ==========
+# ========== TAB 0: HOME + AI SUGGESTIONS ==========
 with tabs[0]:
     st.header("数字健康评分")
     score = calc_health(conn)
@@ -62,58 +96,46 @@ with tabs[0]:
             c1.metric("重复文件", f"{score['dup_score']}/25", f"{score['dup_files']:,}个")
             c2.metric("未使用文件", f"{score['unused_score']}/25", f"{score['unused_mb']:.0f}MB")
             c3.metric("磁盘空间", f"{score['disk_score']}/25", f"C盘 {score['c_pct']:.1f}%")
-            c4.metric("软件健康", f"{score['sw_score']}/25", f"{score['sw_multi']}个多版本")
+            c4.metric("软件健康", f"{score['sw_score']}/25", f"{score['sw_multi']}多版本")
 
         st.divider()
-        st.subheader("关键指标")
-        m1, m2, m3, m4 = st.columns(4)
-        m1.metric("文件总数", f"{score['total_files']:,}")
-        m2.metric("重复文件组", f"{score['dup_count']:,}")
-        m3.metric("重复占用", f"{score['dup_mb']:.0f} MB")
-        m4.metric("软件总数", f"{score['sw_count']}")
 
-        st.divider()
-        st.subheader("问题列表")
-        issues = []
-        if score["dup_score"] < 20: issues.append(f"⚠️ 重复文件过多（{score['dup_files']:,}个），扣{25-score['dup_score']}分")
-        if score["unused_score"] < 15: issues.append(f"⚠️ 长期未使用文件占用 {score['unused_mb']:.0f}MB，扣{25-score['unused_score']}分")
-        if score["disk_score"] < 15: issues.append(f"⚠️ C盘使用率 {score['c_pct']:.1f}%，扣{25-score['disk_score']}分")
-        if score["sw_score"] < 20: issues.append(f"⚠️ {score['sw_multi']}个软件存在多版本，扣{25-score['sw_score']}分")
-        if not issues: issues.append("✅ 各项指标良好，暂无问题")
-        for i in issues: st.write(i)
+        # AI Suggestions Center
+        st.header("🤖 AI 建议中心")
+        suggestions = []
+        if score["dup_score"] < 20:
+            dup_sz = score["dup_mb"]
+            suggestions.append({"icon": "⚠️", "title": "重复文件清理", "desc": f"发现 {score['dup_files']:,} 个重复文件，占用 {dup_sz:.0f}MB", "action": f"预计可释放 {(dup_sz*0.5):.0f}MB", "tab": "📂 文件", "btn": "查看重复文件"})
+        if score["unused_score"] < 15:
+            suggestions.append({"icon": "📦", "title": "未使用文件归档", "desc": f"{score['unused_count']:,} 个文件超过90天未使用", "action": f"占用 {score['unused_mb']:.0f}MB", "tab": "📂 文件", "btn": "查看未使用文件"})
+        if score["disk_score"] < 15:
+            suggestions.append({"icon": "🔴", "title": "C盘空间不足", "desc": f"C盘使用率 {score['c_pct']:.1f}%", "action": f"剩余空间不足", "tab": "📑 磁盘", "btn": "查看磁盘详情"})
+        if score["sw_score"] < 20:
+            suggestions.append({"icon": "🔄", "title": "多版本软件", "desc": f"{score['sw_multi']} 个软件存在多版本", "action": "建议清理旧版本", "tab": "📋 软件", "btn": "查看软件健康"})
 
-        st.divider()
-        st.subheader("历史趋势")
-        hist = pd.read_sql_query("SELECT score_date, total_score FROM health_scores ORDER BY score_date DESC LIMIT 14", conn)
-        if len(hist) > 1:
-            hist = hist.iloc[::-1]
-            st.line_chart(hist.set_index("score_date"))
-    else:
-        st.info("评分数据计算中...")
+        if not suggestions:
+            st.success("✅ 各项指标良好，暂无建议")
 
+        for i, s in enumerate(suggestions):
+            cols = st.columns([6, 2, 2])
+            cols[0].write(f"{s['icon']} **{s['title']}**: {s['desc']} ({s['action']})")
+            cols[1].caption(f"→ {s['tab']}")
+
+    st.divider()
     if st.button("🔄 刷新评分", key="refresh_score"):
-        calc_health(conn)
-        st.rerun()
+        calc_health(conn); st.rerun()
 
-# ========== TAB 1: 文件资产 ==========
+# ========== TAB 1: FILE ASSETS ==========
 with tabs[1]:
-    cur.execute("SELECT COUNT(*) FROM files")
-    fc = cur.fetchone()[0]
-    cur.execute("SELECT COUNT(*) FROM (SELECT file_name, file_size FROM files GROUP BY file_name, file_size HAVING COUNT(*)>1)")
-    dg = cur.fetchone()[0]
-    cur.execute("SELECT COALESCE(SUM(cnt),0) FROM (SELECT COUNT(*) AS cnt FROM files GROUP BY file_name, file_size HAVING COUNT(*)>1)")
-    dfc = cur.fetchone()[0]
+    cur.execute("SELECT COUNT(*) FROM files"); fc = cur.fetchone()[0]
+    cur.execute("SELECT COUNT(*) FROM (SELECT file_name, file_size FROM files GROUP BY file_name, file_size HAVING COUNT(*)>1)"); dg = cur.fetchone()[0]
+    cur.execute("SELECT COALESCE(SUM(cnt),0) FROM (SELECT COUNT(*) AS cnt FROM files GROUP BY file_name, file_size HAVING COUNT(*)>1)"); dfc = cur.fetchone()[0]
     c1,c2,c3,c4=st.columns(4)
-    with c1:
-        with st.expander(f"文件总数: {fc:,}"):
-            st.dataframe(pd.read_sql_query("SELECT file_name,file_path,ROUND(file_size/1048576.0,2) AS size_mb,last_modified FROM files ORDER BY file_size DESC LIMIT 200",conn), use_container_width=True, hide_index=True, height=400)
-    with c2:
-        with st.expander(f"重复组数: {dg:,}"):
-            st.dataframe(pd.read_sql_query("SELECT file_name,ROUND(file_size/1048576.0,2) AS size_mb,COUNT(*) AS dc,MIN(file_path) AS sample_path FROM files GROUP BY file_name,file_size HAVING COUNT(*)>1 ORDER BY dc DESC LIMIT 100",conn), use_container_width=True, hide_index=True, height=400)
-    with c3:
-        with st.expander(f"重复文件: {dfc:,}"):
-            st.dataframe(pd.read_sql_query("SELECT file_name,file_path,ROUND(file_size/1048576.0,2) AS size_mb,last_modified FROM files ORDER BY last_modified ASC LIMIT 200",conn), use_container_width=True, hide_index=True, height=400)
+    with c1: st.metric("文件总数", f"{fc:,}")
+    with c2: st.metric("重复组数", f"{dg:,}")
+    with c3: st.metric("重复文件", f"{dfc:,}")
     c4.metric("数据库","SQLite")
+
     st.divider()
     st.header("🔍 文件搜索")
     kw = st.text_input("输入文件名称关键字", placeholder="如: .pdf, 报告...", key="file_search")
@@ -121,27 +143,94 @@ with tabs[1]:
         df = pd.read_sql_query(f"SELECT file_name,file_path,ROUND(file_size/1048576.0,2) AS size_mb FROM files WHERE file_name LIKE ? {SHORTCUT_FILTER} ORDER BY file_size DESC LIMIT 100", conn, params=[f"%{kw}%"])
         st.caption(f"找到 {len(df)} 条结果")
         _render_file_table(df,"search")
+
+    st.divider()
+
+    # === DUPLICATE FILE ACTION CENTER ===
+    st.header("🔧 重复文件处理中心")
+    df_dup = pd.read_sql_query("""SELECT file_name, ROUND(file_size/1048576.0,2) AS size_mb, COUNT(*) AS dc, MIN(file_path) AS sample_path, MAX(file_path) AS dup_path FROM files GROUP BY file_name, file_size HAVING COUNT(*) > 1 ORDER BY dc DESC LIMIT 100""", conn)
+
+    if not df_dup.empty:
+        total_dup_mb = (df_dup["size_mb"] * (df_dup["dc"] - 1)).sum()
+        st.caption(f"前100重复组，保留一份可释放约 {total_dup_mb:.0f} MB")
+        disp = df_dup.copy()
+        disp = disp[["file_name", "size_mb", "dc", "sample_path"]]
+        disp.columns = ["文件名", "大小(MB)", "重复数", "保留路径"]
+
+        sel_key_dup = "dup_sel"
+        event_dup = st.dataframe(disp, use_container_width=True, hide_index=True, height=400,
+            on_select="rerun", selection_mode="single-row", key="tbl_dupact")
+        if event_dup.selection.rows:
+            idx = event_dup.selection.rows[0]
+            if idx != st.session_state.get(sel_key_dup, -1):
+                st.session_state[sel_key_dup] = idx
+                row = df_dup.iloc[idx]
+                keep = row["sample_path"]
+                dup = row["dup_path"]
+                sz = row["size_mb"]
+                st.info(f"**保留**: {keep}\n\n**建议删除**: {dup}\n\n释放空间: {sz:.0f} MB")
+                cdel, carc = st.columns(2)
+                if cdel.button(f"🗑️ 删除副本 ({sz:.0f}MB)", key=f"del_dup_{idx}"):
+                    ok, msg = _safe_delete(dup)
+                    if ok: st.success(f"已移至回收站: {msg}")
+                    else: st.error(msg)
+                if carc.button(f"📦 归档副本", key=f"arc_dup_{idx}"):
+                    ok, msg = _archive_file(dup)
+                    if ok: st.success(f"已归档: {msg}")
+                    else: st.error(msg)
+    else:
+        st.info("无重复文件")
+
     st.divider()
     st.header("📦 Top 100 大文件")
     df_big = pd.read_sql_query(f"SELECT file_name,file_path,ROUND(file_size/1048576.0,2) AS size_mb FROM files WHERE 1=1 {SHORTCUT_FILTER} ORDER BY file_size DESC LIMIT 100", conn)
     _render_file_table(df_big,"big")
-    st.divider()
-    st.header("🔧 重复文件统计")
-    st.dataframe(pd.read_sql_query("SELECT file_name,ROUND(file_size/1048576.0,2) AS size_mb,COUNT(*) AS dc,MIN(file_path) AS sample_path FROM files GROUP BY file_name,file_size HAVING COUNT(*)>1 ORDER BY dc DESC LIMIT 50",conn), use_container_width=True, hide_index=True, height=400)
-    st.divider()
-    st.header("🕐 长期未使用文件")
-    df_old = pd.read_sql_query(f"SELECT file_name,file_path,last_modified,ROUND(file_size/1048576.0,2) AS size_mb FROM files WHERE 1=1 {SHORTCUT_FILTER} ORDER BY last_modified ASC LIMIT 50", conn)
-    _render_file_table(df_old,"old")
 
-# ========== TAB 2: 软件资产中心 ==========
+    st.divider()
+
+    # === UNUSED FILE ACTION CENTER ===
+    st.header("🕐 长期未使用文件处理中心")
+    df_old = pd.read_sql_query(f"SELECT file_name,file_path,last_modified,ROUND(file_size/1048576.0,2) AS size_mb FROM files WHERE 1=1 AND NOT (file_path LIKE '%Windows%' OR file_path LIKE '%System32%' OR file_name IN ('pagefile.sys','hiberfil.sys','swapfile.sys')) {SHORTCUT_FILTER} ORDER BY last_modified ASC LIMIT 100", conn)
+    if not df_old.empty:
+        total_old_mb = df_old["size_mb"].sum()
+        st.caption(f"前100个最久未使用文件，共 {total_old_mb:.0f} MB（已排除系统文件）")
+        sel_key_old = "old_sel"
+        disp_old = df_old[["file_name","size_mb","last_modified","file_path"]].copy()
+        disp_old.columns = ["文件名","大小(MB)","最后修改","路径"]
+        event_old = st.dataframe(disp_old, use_container_width=True, hide_index=True, height=400,
+            on_select="rerun", selection_mode="single-row", key="tbl_oldact")
+        if event_old.selection.rows:
+            idx = event_old.selection.rows[0]
+            if idx != st.session_state.get(sel_key_old, -1):
+                st.session_state[sel_key_old] = idx
+                row = df_old.iloc[idx]
+                fp = row["file_path"]
+                sz = row["size_mb"]
+                st.info(f"**文件**: {row['file_name']}\n**路径**: {fp}\n**大小**: {sz:.0f} MB")
+                c1,c2,c3 = st.columns(3)
+                if c1.button(f"🗑️ 删除", key=f"del_old_{idx}"):
+                    ok, msg = _safe_delete(fp)
+                    if ok: st.success(f"已移至回收站")
+                    else: st.error(msg)
+                if c2.button(f"📦 归档", key=f"arc_old_{idx}"):
+                    ok, msg = _archive_file(fp)
+                    if ok: st.success(f"已归档")
+                    else: st.error(msg)
+                if c3.button(f"📂 打开目录", key=f"open_old_{idx}"):
+                    _open_file(fp)
+    else:
+        st.info("无长期未使用文件")
+
+# ========== TAB 2: SOFTWARE ==========
 with tabs[2]:
     cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='software'")
     if cur.fetchone() is None:
         st.warning("软件数据表未创建。运行: python software_to_sqlite.py")
     else:
-        cur.execute("SELECT COUNT(*) FROM software")
-        st.metric("软件总数", f"{cur.fetchone()[0]}")
+        cur.execute("SELECT COUNT(*) FROM software"); sw_count = cur.fetchone()[0]
+        st.metric("软件总数", f"{sw_count}")
         st.divider()
+
         st.header("🔍 软件搜索")
         c1,c2=st.columns([3,1])
         with c1: sw_kw=st.text_input("搜索软件名称",placeholder="例: Python, Docker...",key="sw_search")
@@ -150,15 +239,11 @@ with tabs[2]:
         params=[f"%{sw_kw}%"] if sw_kw else []
         sm={"名称 A-Z":"name ASC","名称 Z-A":"name DESC","安装日期 新→旧":"install_date DESC","安装日期 旧→新":"install_date ASC"}
         oc=sm.get(sort_by,"name ASC")
-        sql=f"SELECT name,install_date,install_path FROM software {wc} ORDER BY {oc} LIMIT 200"
-        df_sw=pd.read_sql_query(sql,conn,params=params)
+        df_sw=pd.read_sql_query(f"SELECT name,install_date,install_path FROM software {wc} ORDER BY {oc} LIMIT 200",conn,params=params)
         if not df_sw.empty: df_sw["install_date"]=df_sw["install_date"].apply(lambda x:_format_install_date(x) if pd.notna(x) else "-")
-        st.caption(f"找到 {len(df_sw)} 条软件记录")
-
-        # Table display
+        st.caption(f"找到 {len(df_sw)} 条")
         if not df_sw.empty:
-            disp=df_sw.copy()
-            disp.columns=["软件名称","安装日期","安装路径"]
+            disp=df_sw.copy(); disp.columns=["软件名称","安装日期","安装路径"]
             sel_key="swsel_main"
             event=st.dataframe(disp,use_container_width=True,hide_index=True,height=min(35*len(disp)+38,600),on_select="rerun",selection_mode="single-row",key="swtbl_main")
             if event.selection.rows:
@@ -169,33 +254,43 @@ with tabs[2]:
                     if ip and os.path.exists(ip): os.startfile(ip)
                     else: st.toast("无安装路径")
 
-        # SW Health Analysis
         st.divider()
-        st.header("🔬 软件健康分析")
-        dup_sw=pd.read_sql_query("SELECT name,COUNT(*) AS ver_count,GROUP_CONCAT(version,', ') AS versions FROM software GROUP BY name HAVING COUNT(*)>1 ORDER BY ver_count DESC",conn)
+
+        # === MULTI-VERSION SOFTWARE ACTION CENTER ===
+        st.header("🔬 多版本软件处理中心")
+        dup_sw=pd.read_sql_query("SELECT name,COUNT(*) AS ver_count,GROUP_CONCAT(version,', ') AS versions, MAX(version) AS latest_ver, MIN(version) AS oldest_ver FROM software GROUP BY name HAVING COUNT(*)>1 ORDER BY ver_count DESC",conn)
         if not dup_sw.empty:
-            st.subheader(f"多版本软件 ({len(dup_sw)} 个)")
-            st.caption("同一软件安装了多个版本，建议只保留最新版本")
-            st.dataframe(dup_sw, use_container_width=True, hide_index=True)
+            st.caption("同一软件安装了多个版本，建议保留最新版本")
+            sel_key_sw = "sw_dup_sel"
+            disp_sw = dup_sw[["name","ver_count","latest_ver","oldest_ver"]].copy()
+            disp_sw.columns = ["软件名称","版本数","最新版","最旧版"]
+            event_sw = st.dataframe(disp_sw, use_container_width=True, hide_index=True, height=350,
+                on_select="rerun", selection_mode="single-row", key="tbl_swact")
+            if event_sw.selection.rows:
+                idx = event_sw.selection.rows[0]
+                if idx != st.session_state.get(sel_key_sw, -1):
+                    st.session_state[sel_key_sw] = idx
+                    row = dup_sw.iloc[idx]
+                    st.info(f"**{row['name']}**\n版本: {row['versions']}\n\n💡 建议保留: {row['latest_ver']}\n⚠️ 建议卸载: {row['oldest_ver']}")
+                    if st.button(f"⚡ 在winget中搜索 {row['name']}", key=f"winget_{idx}"):
+                        subprocess.run(["winget","search",row["name"]])
+                        st.toast("请在winget中手动卸载旧版本")
         else:
             st.success("✅ 无多版本软件")
 
+        st.divider()
+        st.header("最早安装的软件 (Top 30)")
         stale=pd.read_sql_query("SELECT name,version,install_date FROM software WHERE install_date IS NOT NULL AND install_date != '' ORDER BY install_date ASC LIMIT 30",conn)
-        if not stale.empty:
-            st.subheader("最早安装的软件 (Top 30)")
-            st.dataframe(stale, use_container_width=True, hide_index=True)
-        else:
-            st.info("无安装日期数据")
+        if not stale.empty: st.dataframe(stale, use_container_width=True, hide_index=True)
 
-# ========== TAB 3: 磁盘资产中心 ==========
+# ========== TAB 3: DISKS ==========
 with tabs[3]:
     cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='disks'")
     if cur.fetchone() is None:
         st.warning("磁盘数据表未创建。运行: python disk_to_sqlite.py")
     else:
         df_disks=pd.read_sql_query("SELECT name,total_gb,used_gb,free_gb,usage_pct,root,description FROM disks ORDER BY name",conn)
-        if df_disks.empty:
-            st.info("磁盘数据为空")
+        if df_disks.empty: st.info("磁盘数据为空")
         else:
             st.header("📑 磁盘概览")
             c_row=df_disks[df_disks["name"].str.upper()=="C"]
@@ -215,16 +310,16 @@ with tabs[3]:
                 st.caption(f"已用 {used:.1f} GB · 剩余 {free:.1f} GB · 共 {total:.1f} GB")
                 st.divider()
 
-# ========== TAB 4: 存储空间分析 ==========
+# ========== TAB 4: STORAGE ==========
 with tabs[4]:
     st.header("📊 存储空间分析")
     dirs_info=[
-        ("Downloads", "下载目录", "C:/Users/Administrator/Downloads"),
-        ("Desktop", "桌面", "C:/Users/Administrator/Desktop"),
-        ("Documents", "文档", "C:/Users/Administrator/Documents"),
-        ("WeChat Files", "微信文件", "D:/WeChat Files"),
-        ("Obsidian", "知识库", "E:/知识库obsidian"),
-        ("Projects", "项目目录", "E:/创业项目"),
+        ("Downloads","下载目录","C:/Users/Administrator/Downloads"),
+        ("Desktop","桌面","C:/Users/Administrator/Desktop"),
+        ("Documents","文档","C:/Users/Administrator/Documents"),
+        ("WeChat Files","微信文件","D:/WeChat Files"),
+        ("Obsidian","知识库","E:/知识库obsidian"),
+        ("Projects","项目目录","E:/创业项目"),
     ]
     results=[]
     for name,label,dpath in dirs_info:
@@ -238,162 +333,15 @@ with tabs[4]:
                         if os.path.exists(fp): total_size+=os.path.getsize(fp); file_count+=1
                     except: pass
             results.append({"目录":label,"路径":dpath,"文件数":file_count,"大小(MB)":round(total_size/1048576,1)})
-        else:
-            results.append({"目录":label,"路径":dpath,"文件数":0,"大小(MB)":0})
-    df_st=pd.DataFrame(results)
-    df_st=df_st.sort_values("大小(MB)",ascending=False)
+        else: results.append({"目录":label,"路径":dpath,"文件数":0,"大小(MB)":0})
+    df_st=pd.DataFrame(results).sort_values("大小(MB)",ascending=False)
     st.dataframe(df_st,use_container_width=True,hide_index=True)
 
-    st.divider()
-    st.subheader("Top 20 目录（按文件聚合大小）")
-    try:
-        top_dirs=pd.read_sql_query("""
-            SELECT SUBSTR(file_path,1,LENGTH(file_path)-LENGTH(file_name)-1) AS directory,
-                   COUNT(*) AS file_count,
-                   ROUND(SUM(file_size)/1048576.0,1) AS total_mb
-            FROM files GROUP BY directory ORDER BY total_mb DESC LIMIT 20
-        """,conn)
-        top_dirs.columns=["目录","文件数","大小(MB)"]
-        st.dataframe(top_dirs,use_container_width=True,hide_index=True)
-    except: st.info("目录聚合查询需要数据库支持（当前文件系统扫描较慢）")
-
-# ========== TAB 5: 备份中心 ==========
-with tabs[5]:
-    st.header("💾 备份中心")
-    st.subheader("Git 仓库备份")
-    git_repos=[("GraceOS",r"E:\创业项目\GraceOS"),("Obsidian知识库",r"E:\知识库obsidian")]
-    for rname,rpath in git_repos:
-        git_d=os.path.join(rpath,".git")
-        status="✅ Git仓库" if os.path.exists(git_d) else "❌ 非Git仓库"
-        col_g1,col_g2,col_g3=st.columns([2,1,1])
-        col_g1.write(f"**{rname}**: {rpath}")
-        col_g2.write(status)
-        if os.path.exists(git_d):
-            if col_g3.button(f"Auto Commit {rname}",key=f"gcommit_{rname}"):
-                try:
-                    r1=subprocess.run(["git","-C",rpath,"add","."],capture_output=True,text=True)
-                    r2=subprocess.run(["git","-C",rpath,"commit","-m",f"Auto backup {date.today()}"],capture_output=True,text=True)
-                    if "nothing to commit" in r2.stdout+r2.stderr:
-                        st.success(f"{rname}: 无变更")
-                    elif r2.returncode==0:
-                        st.success(f"{rname}: commit 成功")
-                        cur.execute("INSERT INTO backup_history(backup_type,target,status,details,created_at) VALUES('git',?,?,?,datetime('now','localtime'))",(rpath,"success",r2.stdout[:200]))
-                        conn.commit()
-                    else:
-                        st.error(f"{rname}: {r2.stderr}")
-                except Exception as e: st.error(str(e))
-    st.divider()
-    st.subheader("SQLite 数据库备份")
-    if st.button("📦 备份数据库",key="bkup_sqlite"):
-        try:
-            import shutil
-            bk_path="E:\\创业项目\\GraceOS\\09_Database\\graceos_backup_" + date.today().strftime('%Y%m%d') + ".db"
-            shutil.copy2(DB_FILE,bk_path)
-            cur.execute("INSERT INTO backup_history(backup_type,target,status,details,created_at) VALUES('sqlite',?,'success',?,datetime('now','localtime'))",(bk_path,f"Size: {os.path.getsize(DB_FILE)} bytes"))
-            conn.commit()
-            st.success(f"数据库已备份到: {bk_path}")
-        except Exception as e: st.error(str(e))
-
-    st.divider()
-    st.subheader("备份历史")
-    bh=pd.read_sql_query("SELECT * FROM backup_history ORDER BY id DESC LIMIT 20",conn)
-    if bh.empty: st.info("暂无备份记录")
-    else: st.dataframe(bh,use_container_width=True,hide_index=True)
-
-# ========== TAB 6: 项目管理中心 ==========
-with tabs[6]:
-    st.header("📁 项目管理中心")
-    st.info("功能开发中 - 扫描本地项目目录、检测Git状态、统计项目大小")
-    if st.button("🔍 快速扫描项目",key="scan_proj"):
-        project_dirs=[
-            r"E:\创业项目\GraceOS",
-            r"E:\知识库obsidian",
-        ]
-        results=[]
-        for pd_path in project_dirs:
-            if os.path.exists(pd_path):
-                git_d=os.path.join(pd_path,".git")
-                is_git=os.path.exists(git_d)
-                branch=""; gs=""
-                if is_git:
-                    try:
-                        br=subprocess.run(["git","-C",pd_path,"branch","--show-current"],capture_output=True,text=True)
-                        branch=br.stdout.strip()
-                        stt=subprocess.run(["git","-C",pd_path,"status","--short"],capture_output=True,text=True)
-                        gs="dirty" if stt.stdout.strip() else "clean"
-                    except: pass
-                # Count files + size
-                fc_i=0; sz=0
-                for dp,_,fns in os.walk(pd_path):
-                    for fn in fns:
-                        try:
-                            fp_i=os.path.join(dp,fn)
-                            if os.path.exists(fp_i) and not ".git" in dp:
-                                fc_i+=1; sz+=os.path.getsize(fp_i)
-                        except: pass
-                results.append({"名称":os.path.basename(pd_path),"路径":pd_path,"Git":"✅" if is_git else "❌","分支":branch,"状态":gs,"文件数":fc_i,"大小MB":round(sz/1048576,1)})
-        if results:
-            cur.executemany("INSERT OR REPLACE INTO project_assets(name,path,is_git,git_branch,git_status,size_mb,status,scan_time) VALUES(?,?,?,?,?,?,?,datetime('now','localtime'))",[(r["名称"],r["路径"],1 if r["Git"]=="✅" else 0,r["分支"],r["状态"],r["大小MB"],"active") for r in results])
-            conn.commit()
-            st.dataframe(pd.DataFrame(results),use_container_width=True,hide_index=True)
-
-# ========== TAB 7: 知识库中心 ==========
-with tabs[7]:
-    st.header("🧠 知识库中心")
-    obsidian_path=r"E:\知识库obsidian"
-    if os.path.exists(obsidian_path):
-        md_count=0; att_count=0; total_sz=0
-        for dp,_,fns in os.walk(obsidian_path):
-            for fn in fns:
-                fp=os.path.join(dp,fn)
-                if ".git" in dp or ".obsidian" in dp: continue
-                try:
-                    if os.path.exists(fp):
-                        sz=os.path.getsize(fp); total_sz+=sz
-                        if fn.endswith(".md"): md_count+=1
-                        else: att_count+=1
-                except: pass
-        c1,c2,c3,c4=st.columns(4)
-        c1.metric("Markdown笔记",f"{md_count}篇")
-        c2.metric("附件",f"{att_count}个")
-        c3.metric("总大小",f"{total_sz/1048576:.1f} MB")
-        c4.metric("路径",obsidian_path)
-        cur.execute("INSERT OR REPLACE INTO knowledge_stats(vault_name,vault_path,note_count,attachment_count,size_mb,scan_time) VALUES(?,?,?,?,?,datetime('now','localtime'))",("知识库",obsidian_path,md_count,att_count,round(total_sz/1048576,1)))
-        conn.commit()
-    else:
-        st.warning(f"Obsidian路径不存在: {obsidian_path}")
-
-# ========== TAB 8: Prompt 中心 ==========
-with tabs[8]:
-    st.header("📝 Prompt 管理中心")
-    st.info("Prompt资产管理 - 分类、搜索、版本管理")
-    with st.form("add_prompt"):
-        st.write("添加新 Prompt")
-        p_title=st.text_input("标题")
-        p_content=st.text_area("内容")
-        p_cat=st.selectbox("分类",["coding","writing","analysis","automation","other"])
-        p_tags=st.text_input("标签(逗号分隔)")
-        if st.form_submit_button("保存"):
-            if p_title and p_content:
-                cur.execute("INSERT INTO prompt_assets(title,content,category,tags,created_at,updated_at) VALUES(?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))",(p_title,p_content,p_cat,p_tags))
-                conn.commit()
-                st.success("保存成功")
-                st.rerun()
-    prompts=pd.read_sql_query("SELECT id,title,category,tags,usage_count,rating,last_used FROM prompt_assets ORDER BY id DESC LIMIT 50",conn)
-    if not prompts.empty:
-        st.dataframe(prompts,use_container_width=True,hide_index=True)
-    else:
-        st.info("暂无Prompt，请添加")
-
-# ========== TAB 9: 设置中心 ==========
-with tabs[9]:
-    st.header("⚙️ 设置中心")
-    st.subheader("扫描设置")
-    st.checkbox("启用自动扫描（暂未实现）",value=False)
-    st.subheader("备份设置")
-    st.checkbox("Git 自动 Push（暂未实现）",value=False)
-    st.subheader("通知设置")
-    st.checkbox("C盘超过85%提醒（暂未实现）",value=False)
-    st.checkbox("健康分低于60提醒（暂未实现）",value=False)
+# ========== TABS 5-9: FUTURE MODULES ==========
+for i, (tab, name) in enumerate([(tabs[5],"备份中心"),(tabs[6],"项目管理中心"),(tabs[7],"知识库中心"),(tabs[8],"Prompt管理中心"),(tabs[9],"设置中心")]):
+    with tab:
+        st.header(f"🚧 {name}")
+        st.info(f"{name} - Future Module（待开发）")
+        st.caption("此模块将在后续版本中实现")
 
 conn.close()
