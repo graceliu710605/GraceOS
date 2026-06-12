@@ -594,3 +594,44 @@ streamlit run dashboard.py
 ```powershell
 streamlit run dashboard.py
 ```
+
+
+---
+
+## 工程规范建立 ✅
+
+**日期**: 2026-06-12
+
+### 新建文件
+
+| 文件 | 说明 |
+|------|------|
+| `DEVELOPMENT_RULES.md` | 开发规范（产品定位/优先开发/暂缓开发/删除安全/白名单/系统保护/Git规范） |
+
+### 文档整理
+
+| 操作 | 文件 |
+|------|------|
+| → `docs/PRD.md` | GraceOS_V2_PRD.md |
+| → `docs/DATABASE.md` | GraceOS_V2_DATABASE.md |
+| → `docs/UI_DESIGN.md` | GraceOS_V2_UI_DESIGN.md |
+| → `docs/BUSINESS_PLAN.md` | GraceOS_BUSINESS_PLAN.md |
+| → `docs/UI_REVIEW.md` | UI_REVIEW.md |
+| → `docs/RELEASE_NOTE.md` | V2_BETA_RELEASE_NOTE.md |
+
+### 当前目录结构
+
+```
+GraceOS_V1/
+├── dashboard.py
+├── main.py
+├── scanners/           # 扫描器
+├── analyzers/          # 分析器
+├── docs/               # 设计文档和报告 (8 files)
+├── screenshots/        # 截图
+├── DEVELOPMENT_RULES.md
+├── PROJECT_STATUS.md
+├── ROADMAP.md
+├── CHANGELOG.md
+└── README.md
+```
