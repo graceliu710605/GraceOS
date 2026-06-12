@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Node
+node_modules/
+package-lock.json
+package.json
+
+# IDE
+.vscode/
+.codex/
+.obsidian/
+
+# Project artifacts
+*.zip
+*.log
+screenshots/
+
+# Database backups
+*.db.backup
+*.db-backup
+
+# OS files
+Thumbs.db
+.DS_Store
+Desktop.ini
+
+# Streamlit
+.streamlit/
+
+# Temp
+*.tmp
+*.temp
