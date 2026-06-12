@@ -60,42 +60,39 @@ def _parse_winget_output(stdout):
     return software_list
 
 def _query_registry():
-    ps_script = r"""
-$keys = @(
-    'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*',
-    'HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*',
-    'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*'
-)
-$results = @()
-foreach ($key in $keys) {
-    if (Test-Path (Split-Path $key -Parent)) {
-        Get-ItemProperty $key -ErrorAction SilentlyContinue | ForEach-Object {
-            if ($_.DisplayName) {
-                $results += [PSCustomObject]@{
-                    DisplayName = ($_.DisplayName -replace '"','"')
-                    Publisher = if ($_.Publisher) { ($_.Publisher -replace '"','"') } else { "" }
-                    InstallDate = if ($_.InstallDate) { $_.InstallDate } else { "" }
-                    EstimatedSize = if ($_.EstimatedSize) { $_.EstimatedSize } else { 0 }
-                    InstallLocation = if ($_.InstallLocation) { ($_.InstallLocation -replace '"','"') } else { "" }
-                }
-            }
-        }
-    }
-}
-[Console]::OutputEncoding = [Text.Encoding]::UTF8
-$json = $results | ConvertTo-Json -Compress -Depth 2
-# Fix: write to stdout as UTF-8 bytes to avoid encoding issues
-$bytes = [Text.Encoding]::UTF8.GetBytes($json)
-[Console]::OpenStandardOutput().Write($bytes, 0, $bytes.Length)
-
-""""""
-    try:
-        result = subprocess.run(["powershell","-NoProfile","-Command",ps_script], capture_output=True, text=True, errors="replace", timeout=60)
-        if result.returncode == 0 and result.stdout.strip():
-            data = json.loads(result.stdout)
-            return [data] if isinstance(data, dict) else data
-    except Exception as e: print(f"Registry query failed: {e}")
-    return []
+    """查询 Windows 注册表获取 Publisher, InstallDate, EstimatedSize, InstallLocation。(uses winreg, no PowerShell)"""
+    import winreg
+    paths = [
+        (winreg.HKEY_LOCAL_MACHINE, r"Software\Microsoft\Windows\CurrentVersion\Uninstall"),
+        (winreg.HKEY_LOCAL_MACHINE, r"Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall"),
+        (winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Uninstall"),
+    ]
+    results = []
+    for hive, subkey_path in paths:
+        try:
+            key = winreg.OpenKey(hive, subkey_path, 0, winreg.KEY_READ)
+            i = 0
+            while True:
+                try:
+                    subkey_name = winreg.EnumKey(key, i)
+                    with winreg.OpenKey(key, subkey_name) as sk:
+                        try: dn = winreg.QueryValueEx(sk, "DisplayName")[0]
+                        except: dn = None
+                        try: il = winreg.QueryValueEx(sk, "InstallLocation")[0]
+                        except: il = None
+                        try: pub = winreg.QueryValueEx(sk, "Publisher")[0]
+                        except: pub = None
+                        try: dt = winreg.QueryValueEx(sk, "InstallDate")[0]
+                        except: dt = None
+                        try: sz = winreg.QueryValueEx(sk, "EstimatedSize")[0]
+                        except: sz = None
+                    if dn:
+                        results.append({"DisplayName": dn, "Publisher": pub or "", "InstallDate": dt or "", "EstimatedSize": sz or 0, "InstallLocation": il or ""})
+                    i += 1
+                except OSError: break
+            winreg.CloseKey(key)
+        except OSError: pass
+    return results
 
 def _merge_registry_data(software_list, registry_data):
     for sw in software_list:
