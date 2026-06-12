@@ -157,3 +157,38 @@ git commit -m "模块名: 变更说明"
 3. 生成 `docs/QA_REPORT.md`
 4. 生成 `docs/RELEASE_NOTE.md`
 5. `git add . && git commit`
+
+
+---
+
+## 验收规范
+
+禁止仅回复：已完成 / 已修复 / 已发布
+
+必须提供：
+- 文件路径
+- 文件大小
+- 测试结果
+- 下载链接（如有）
+- 验证报告
+
+---
+
+## 文档规范
+
+每次开发完成必须更新 `PROJECT_STATUS.md`，并根据任务生成：
+
+- `QA_REPORT.md` — 测试报告
+- `UI_REVIEW.md` — UI巡检报告
+- `BUILD_REPORT.md` — 构建报告
+- `SELF_TEST_REPORT.md` — 自测报告
+- `RELEASE_NOTE.md` — 发布说明
+
+---
+
+## 发布规范
+
+发布前必须生成：
+- `RELEASE_CHECKLIST.md` — 发布检查清单
+- `INSTALL_TEST_REPORT.md` — 安装测试报告
+- `SELF_TEST_REPORT.md` — 自测报告
