@@ -730,3 +730,32 @@ GraceOS V2 Beta 已升级为**可交付产品**:
 - ✅ 双击即用
 - ✅ 首次运行自动初始化
 - ✅ 文档齐全（8份文档）
+
+
+---
+
+## 发布优化 ✅
+
+**日期**: 2026-06-12 | **Commit**: (pending)
+
+### 完成内容
+
+| 任务 | 说明 |
+|------|------|
+| README.md 重写 | 产品介绍/问题/适用人群/截图/快速开始/路线图 |
+| screenshots/ 更新 | 首页/文件/软件/磁盘 4张截图 (42-63KB) |
+| DEMO_MODE_DESIGN.md | 体验模式设计方案 (不实现) |
+| RELEASE_NOTE.md | 更新发布说明 |
+
+### 产品文档总览
+
+| 文档 | 作用 |
+|------|------|
+| `README.md` | 项目门户 (产品介绍+快速开始) |
+| `INSTALL_GUIDE.md` | 安装指南 |
+| `DEVELOPMENT_RULES.md` | 开发规范 |
+| `ROADMAP.md` | 路线图 |
+| `docs/DEMO_MODE_DESIGN.md` | Demo模式设计 |
+| `docs/PACKAGE_PLAN.md` | 打包方案 |
+| `docs/RELEASE_CHECKLIST.md` | 发布检查清单 |
+| `docs/RELEASE_NOTE.md` | 发布说明 |
