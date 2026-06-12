@@ -70,18 +70,25 @@ $results = @()
 foreach ($key in $keys) {
     if (Test-Path (Split-Path $key -Parent)) {
         Get-ItemProperty $key -ErrorAction SilentlyContinue | ForEach-Object {
-            $results += [PSCustomObject]@{
-                DisplayName = $_.DisplayName
-                Publisher = $_.Publisher
-                InstallDate = $_.InstallDate
-                EstimatedSize = $_.EstimatedSize
-                InstallLocation = $_.InstallLocation
+            if ($_.DisplayName) {
+                $results += [PSCustomObject]@{
+                    DisplayName = ($_.DisplayName -replace '"','"')
+                    Publisher = if ($_.Publisher) { ($_.Publisher -replace '"','"') } else { "" }
+                    InstallDate = if ($_.InstallDate) { $_.InstallDate } else { "" }
+                    EstimatedSize = if ($_.EstimatedSize) { $_.EstimatedSize } else { 0 }
+                    InstallLocation = if ($_.InstallLocation) { ($_.InstallLocation -replace '"','"') } else { "" }
+                }
             }
         }
     }
 }
-$results | Where-Object { $_.DisplayName } | ConvertTo-Json -Compress
-"""
+[Console]::OutputEncoding = [Text.Encoding]::UTF8
+$json = $results | ConvertTo-Json -Compress -Depth 2
+# Fix: write to stdout as UTF-8 bytes to avoid encoding issues
+$bytes = [Text.Encoding]::UTF8.GetBytes($json)
+[Console]::OpenStandardOutput().Write($bytes, 0, $bytes.Length)
+
+""""""
     try:
         result = subprocess.run(["powershell","-NoProfile","-Command",ps_script], capture_output=True, text=True, errors="replace", timeout=60)
         if result.returncode == 0 and result.stdout.strip():
