@@ -58,4 +58,6 @@
 - RULE-034 AI 任务启动检查
 - RULE-035 修改后 Smoke Test
 - RULE-036 Root Cause Analysis
-- RULE-037 UI First**
+- RULE-037 UI First
+- RULE-038 Definition of Done
+- RULE-039 任务输出格式**
