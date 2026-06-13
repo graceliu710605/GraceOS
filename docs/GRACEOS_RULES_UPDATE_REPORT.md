@@ -4,23 +4,17 @@
 
 ---
 
-## 更新文件
+## 更新
 
-| 文件 | 操作 |
+| 文件 | 变更 |
 |------|------|
-| `PROJECT_OPERATING_RULES.md` | 新增「提交前强制报告」章节 |
-| `CURRENT_SPRINT.md` | 新增本轮发现（回归测试证据缺失） |
+| `PROJECT_OPERATING_RULES.md` | 新增测试执行章节（L1+L2 Sanity Test + 证据要求） |
+| `PROJECT_HANDOVER.md` | 已有引用，无需修改 |
 
-## 新增规则
+## 后续执行
 
-### 提交前强制报告
-任何功能开发完成后必须提交：
-- `REGRESSION_TEST_REPORT.md`
-- `FUNCTION_VERIFICATION_REPORT.md`  
-- `UI_VERIFICATION_REPORT.md`
-
-缺少任一报告 → 视为未完成，禁止提交。
-
-## 引用更新
-
-已引用 AI 组织 `RULE-030` + `RULE-031`。
+每次开发完成后：
+1. L1 开发测试 → 验证本次修改
+2. L2 Sanity Test → 7 核心模块逐个 PASS
+3. 提交测试证据（含时间戳）
+4. Grace 最终验收时执行 L3（如需要）
