@@ -16,6 +16,16 @@
 | 代码位置 | `e:\知识库obsidian\02_Projects\graceos\05_Code\GraceOS_V1` |
 | 数据库位置 | `E:\创业项目\GraceOS\09_Database\graceos.db` |
 
+## 组织规范
+
+本项目遵循 `E:\创业项目\00_AI组织` 中的组织规范与工作流程。详见：
+
+| 规范 | 位置 |
+|------|------|
+| 角色分工与职责边界 | `E:\创业项目\00_AI组织\01_组织架构\AI_TEAM.md` |
+| 工作流程与验收规则 | `E:\创业项目\00_AI组织\02_工作流程\AI_WORKFLOW.md` |
+| 项目特有规则 | `PROJECT_OPERATING_RULES.md` |
+
 ## 快速启动
 
 ```powershell
@@ -27,7 +37,7 @@ streamlit run dashboard.py
 
 | 文件 | 用途 |
 |------|------|
-| `dashboard.py` | Streamlit Web 主应用 (~26KB) |
+| `dashboard.py` | Streamlit Web 主应用 (~23KB) |
 | `main.py` | CLI 扫描入口 |
 | `scanners/software_scanner.py` | 软件扫描 (winget + 注册表) |
 | `scanners/file_scanner.py` | 文件扫描 |
@@ -46,7 +56,6 @@ streamlit run dashboard.py
 | 文件树 | `PROJECT_FILE_TREE.md` | 完整目录结构 |
 | 产品需求 | `docs/PRD.md` | PRD |
 | 数据库设计 | `docs/DATABASE.md` | 数据库 Schema |
-| 商业计划 | `docs/BUSINESS_PLAN.md` | 商业分析 |
 | Beta 反馈 | `docs/BETA_USER_FEEDBACK.md` | 用户反馈汇总 |
 | 文档模板 | `docs/templates/` | 各类文档模板 |
 | 历史归档 | `docs/archive/` | V1/V2 旧版设计文档 |
