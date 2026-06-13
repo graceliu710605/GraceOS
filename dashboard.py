@@ -25,14 +25,10 @@ def _is_protected(fp):
 SHORTCUT_FILTER = " AND file_name NOT LIKE '%=%' AND file_name NOT LIKE 'ms-%' AND file_name NOT LIKE 'shell:%' AND file_name NOT LIKE 'file:///%'"
 
 def _open_file(path):
-    """Open file if exists, show toast otherwise"""
     norm = os.path.normpath(path)
-    if os.path.exists(norm):
-        os.startfile(norm)
-        return True
-    else:
-        st.toast(f"文件已不存在: {os.path.basename(norm)}")
-        return False
+    if os.path.exists(norm): os.startfile(norm)
+    else: st.toast("文件不存在")
+
 
 def _format_size(size_bytes):
     """Adaptive file size display: Bytes/KB/MB/GB"""
@@ -45,11 +41,6 @@ def _format_size(size_bytes):
     else:
         return f"{size_bytes} B"
 
-def _file_exists(fp):
-    """Check file existence, return (exists, display_label)"""
-    ok = os.path.exists(fp)
-    return ok, "✅" if ok else "⚠️ 已不存在"
-
 def _format_date(val):
     if not val: return "-"
     s = str(val).strip()
@@ -57,10 +48,16 @@ def _format_date(val):
     if len(s) >= 10: return s[:10]
     return s
 
+
+def _file_exists(fp):
+    """Check file existence, return (exists, display_label)"""
+    ok = os.path.exists(fp)
+    return ok, "✅" if ok else "⚠️ 已不存在"
+
 def _safe_delete(fp):
+    if not os.path.exists(fp):
+        return False, "文件已不存在"
     try:
-        if not os.path.exists(fp):
-            return False, "文件已不存在"
         target = os.path.join(RECYCLE_DIR, os.path.basename(fp))
         os.makedirs(RECYCLE_DIR, exist_ok=True)
         if os.path.exists(target):
@@ -159,81 +156,56 @@ with tabs[1]:
         df = pd.read_sql_query(f"SELECT file_name,file_path,last_modified,file_size FROM files WHERE file_name LIKE ? {SHORTCUT_FILTER} ORDER BY file_size DESC LIMIT 50", conn, params=[f"%{kw}%"])
         st.caption(f"找到 {len(df)} 条")
         if not df.empty:
-            h1,h2,h3,h4,h5 = st.columns([0.8, 3, 1.2, 1, 2.5])
-            h1.markdown("**删除**"); h2.markdown("**文件名**"); h3.markdown("**日期**"); h4.markdown("**大小**"); h5.markdown("**所在目录**")
+            h1,h2,h3,h4 = st.columns([0.8, 3, 1.2, 1])
+            h1.markdown("**删除**"); h2.markdown("**文件名**"); h3.markdown("**日期**"); h4.markdown("**大小(MB)**")
             st.divider()
             for i, row in df.iterrows():
-                c1,c2,c3,c4,c5 = st.columns([0.8, 3, 1.2, 1, 2.5])
-                exists, _ = _file_exists(row["file_path"])
+                c1,c2,c3,c4 = st.columns([0.8, 3, 1.2, 1])
                 if c1.button("🗑️", key=f"fsdel_{i}"):
-                    if not os.path.exists(row["file_path"]):
-                        st.warning("文件已不存在")
-                    else:
-                        ok, msg = _safe_delete(row["file_path"])
-                        if ok: st.success("已删除"); st.rerun()
-                        else: st.error(msg)
-                label = str(row["file_name"]) if exists else f"⚠️ {row['file_name']}"
-                if c2.button(label, key=f"fsopen_{i}", disabled=not exists):
-                    if exists: _open_file(row["file_path"])
+                    ok, msg = _safe_delete(row["file_path"])
+                    if ok: st.success("已删除"); st.rerun()
+                    else: st.error(msg)
+                if c2.button(str(row["file_name"]), key=f"fsopen_{i}"):
+                    _open_file(row["file_path"])
                 c3.write(_format_date(row["last_modified"]))
                 c4.write(_format_size(row["file_size"]))
-                c5.write(os.path.dirname(row["file_path"]))
     st.divider()
     st.header("🔧 重复文件")
     df_dup = pd.read_sql_query("""SELECT file_name, file_size, COUNT(*) AS dc, MIN(file_path) AS keep_path, MAX(file_path) AS del_path FROM files GROUP BY file_name, file_size HAVING COUNT(*) > 1 ORDER BY dc DESC""", conn)
     if not df_dup.empty:
-        total_groups = len(df_dup)
-        total_saved_bytes = int((df_dup["file_size"] * (df_dup["dc"] - 1)).sum())
-        
-        # Pagination: max 50 groups per page
-        page_size = 50
-        if "dup_page" not in st.session_state:
-            st.session_state.dup_page = 0
-        total_pages = max(1, (total_groups + page_size - 1) // page_size)
-        start = st.session_state.dup_page * page_size
-        end = min(start + page_size, total_groups)
-        df_dup_page = df_dup.iloc[start:end]
-        
-        pc1, pc2, pc3 = st.columns([1, 2, 1])
-        if pc1.button("◀ 上一页", disabled=st.session_state.dup_page <= 0, key="dup_prev"):
-            st.session_state.dup_page -= 1; st.rerun()
-        pc2.write(f"第 {st.session_state.dup_page+1}/{total_pages} 页  (共 {total_groups} 组)")
-        if pc3.button("下一页 ▶", disabled=st.session_state.dup_page >= total_pages-1, key="dup_next"):
-            st.session_state.dup_page += 1; st.rerun()
-        
-        page_bytes = int((df_dup_page["file_size"] * (df_dup_page["dc"] - 1)).sum())
-        st.caption(f"本页保留一份可释放 {_format_size(page_bytes)}   |   总计可释放 {_format_size(total_saved_bytes)}")
+        total_mb = (df_dup["file_size"] * (df_dup["dc"] - 1)).sum()
+        st.caption(f"前50组，保留一份可释放约 {_format_size(int(total_mb*1048576))}")
         sel_key = "dup_checked"
         for i in range(len(df_dup_page)):
-            if f"{sel_key}_{i}" not in st.session_state:
-                st.session_state[f"{sel_key}_{i}"] = False
-        checked = [st.session_state[f"{sel_key}_{i}"] for i in range(len(df_dup_page))]
+            if f"{sel_key}_{j}" not in st.session_state:
+                st.session_state[f"{sel_key}_{j}"] = False
+        checked = [st.session_state[f"{sel_key}_{j}"] for i in range(len(df_dup_page))]
         if any(checked):
             to_del = [df_dup_page.iloc[i]["del_path"] for i, c in enumerate(checked) if c]
-            del_bytes = sum(df_dup_page.iloc[i]["file_size"] for i, c in enumerate(checked) if c)
+            del_bytes = sum(df_dup_page.iloc[i]["size_mb"] for i, c in enumerate(checked) if c)
             if st.button(f"🗑️ 批量删除选中 ({len(to_del)}组, ~{_format_size(del_bytes)})", key="dup_batch"):
                 ok, fail, skip = _safe_delete_batch(to_del)
                 if fail == 0 and skip == 0: st.success(f"已删除 {ok} 个")
-                else: st.warning(f"{ok} 成功, {fail} 失败, {skip} 跳过(文件不存在)")
+                else: st.warning(f"{ok} 成功, {fail} 失败, {skip} 跳过(不存在)")
                 for i in range(len(df_dup_page)):
-                    st.session_state[f"{sel_key}_{i}"] = False
+                    st.session_state[f"{sel_key}_{j}"] = False
                 st.rerun()
         h1,h2,h3,h4,h5,h6 = st.columns([0.3, 1, 0.7, 3, 1.2, 1])
         h1.markdown("**选**"); h2.markdown("**建议**"); h3.markdown("**删除**"); h4.markdown("**文件名**"); h5.markdown("**日期**"); h6.markdown("**大小(MB)**")
         st.divider()
         for j, (_, row) in enumerate(df_dup_page.iterrows()):
             c1,c2,c3,c4,c5,c6 = st.columns([0.3, 1, 0.7, 3, 1.2, 1])
-            key = f"{sel_key}_{i}"
-            st.session_state[key] = c1.checkbox("☐", key=f"dup_cb_{i}", value=st.session_state[key], label_visibility="collapsed")
+            key = f"{sel_key}_{j}"
+            st.session_state[key] = c1.checkbox("☐", key=f"dup_cb_{st.session_state.dup_page}_{j}", value=st.session_state[key], label_visibility="collapsed")
             c2.write("建议保留")
-            if c3.button("🗑️", key=f"dup_del_{i}"):
+            if c3.button("🗑️", key=f"dup_del_{st.session_state.dup_page}_{j}"):
                 ok, msg = _safe_delete(row["del_path"])
                 if ok: st.success("已删除"); st.rerun()
                 else: st.error(msg)
-            if c4.button(str(row["file_name"]), key=f"dup_open_{i}"):
+            if c4.button(str(row["file_name"]), key=f"dup_open_{st.session_state.dup_page}_{j}"):
                 _open_file(row["keep_path"])
             c5.write(_format_date(""))
-            c6.write(_format_size(row['file_size']))
+            c6.write(_format_size(row["file_size"]))
     else:
         st.info("无重复文件")
     st.divider()
@@ -247,11 +219,11 @@ with tabs[1]:
         checked_big = [st.session_state[f"{sel_big}_{i}"] for i in range(len(df_big))]
         if any(checked_big):
             to_del = [df_big.iloc[i]["file_path"] for i, c in enumerate(checked_big) if c]
-            del_bytes = sum(df_big.iloc[i]["file_size"] for i, c in enumerate(checked_big) if c)
-            if st.button(f"🗑️ 批量删除选中 ({len(to_del)}个, ~{_format_size(del_bytes)})", key="big_batch"):
+            del_mb = sum(df_big.iloc[i]["size_mb"] for i, c in enumerate(checked_big) if c)
+            if st.button(f"🗑️ 批量删除选中 ({len(to_del)}个, ~{del_mb:.0f}MB)", key="big_batch"):
                 ok, fail, skip = _safe_delete_batch(to_del)
                 if fail == 0 and skip == 0: st.success(f"已删除 {ok} 个")
-                else: st.warning(f"{ok} 成功, {fail} 失败, {skip} 跳过(文件不存在)")
+                else: st.warning(f"{ok} 成功, {fail} 失败, {skip} 跳过(不存在)")
                 for i in range(len(df_big)):
                     st.session_state[f"{sel_big}_{i}"] = False
                 st.rerun()
@@ -268,7 +240,7 @@ with tabs[1]:
             if c3.button(str(row["file_name"]), key=f"big_open_{i}"):
                 _open_file(row["file_path"])
             c4.write(_format_date(row["last_modified"]))
-            c5.write(_format_size(row['file_size']))
+            c5.write(_format_size(row["file_size"]))
     else:
         st.info("无大文件")
     st.divider()
@@ -276,7 +248,7 @@ with tabs[1]:
     df_old = pd.read_sql_query(f"SELECT file_name,file_path,last_modified,file_size FROM files WHERE 1=1 AND NOT (file_path LIKE '%Windows%' OR file_path LIKE '%System32%' OR file_name IN ('pagefile.sys','hiberfil.sys','swapfile.sys')) {SHORTCUT_FILTER} ORDER BY last_modified ASC LIMIT 100", conn)
     if not df_old.empty:
         total_old_mb = df_old["file_size"].sum()
-        st.caption(f"前100个最久未使用, 共 {_format_size(total_old_bytes)}")
+        st.caption(f"前100个最久未使用, 共 {total_old_mb:.0f} MB")
         sel_old = "old_checked"
         for i in range(len(df_old)):
             if f"{sel_old}_{i}" not in st.session_state:
@@ -284,11 +256,11 @@ with tabs[1]:
         checked_old = [st.session_state[f"{sel_old}_{i}"] for i in range(len(df_old))]
         if any(checked_old):
             to_del = [df_old.iloc[i]["file_path"] for i, c in enumerate(checked_old) if c]
-            del_bytes = sum(df_old.iloc[i]["file_size"] for i, c in enumerate(checked_old) if c)
-            if st.button(f"🗑️ 批量删除选中 ({len(to_del)}个, ~{_format_size(del_bytes)})", key="old_batch"):
+            del_mb = sum(df_old.iloc[i]["size_mb"] for i, c in enumerate(checked_old) if c)
+            if st.button(f"🗑️ 批量删除选中 ({len(to_del)}个, ~{del_mb:.0f}MB)", key="old_batch"):
                 ok, fail, skip = _safe_delete_batch(to_del)
                 if fail == 0 and skip == 0: st.success(f"已删除 {ok} 个")
-                else: st.warning(f"{ok} 成功, {fail} 失败, {skip} 跳过(文件不存在)")
+                else: st.warning(f"{ok} 成功, {fail} 失败, {skip} 跳过(不存在)")
                 for i in range(len(df_old)):
                     st.session_state[f"{sel_old}_{i}"] = False
                 st.rerun()
@@ -305,7 +277,7 @@ with tabs[1]:
             if c3.button(str(row["file_name"]), key=f"old_open_{i}"):
                 _open_file(row["file_path"])
             c4.write(_format_date(row["last_modified"]))
-            c5.write(_format_size(row['file_size']))
+            c5.write(_format_size(row["file_size"]))
     else:
         st.info("无长期未使用文件")
 
