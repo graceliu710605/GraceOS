@@ -182,8 +182,9 @@ with tabs[1]:
     st.header("🔧 重复文件")
     df_dup = pd.read_sql_query("""SELECT file_name, file_size, COUNT(*) AS dc, MIN(file_path) AS keep_path, MAX(file_path) AS del_path FROM files GROUP BY file_name, file_size HAVING COUNT(*) > 1 ORDER BY dc DESC""", conn)
     if not df_dup.empty:
-        total_mb = (df_dup["file_size"] * (df_dup["dc"] - 1)).sum()
-        st.caption(f"共 {total_groups} 组, 总计可释放约 {_format_size(int(total_saved_bytes))}")
+        total_groups = len(df_dup)
+        total_saved_bytes = int((df_dup["file_size"] * (df_dup["dc"] - 1)).sum())
+        st.caption(f"共 {total_groups} 组, 总计可释放约 {_format_size(total_saved_bytes)}")
         sel_key = "dup_checked"
         for i in range(len(df_dup)):
             if f"{sel_key}_{i}" not in st.session_state:
@@ -192,7 +193,7 @@ with tabs[1]:
         if any(checked):
             to_del = [df_dup.iloc[i]["del_path"] for i, c in enumerate(checked) if c]
             del_bytes = sum(df_dup.iloc[i]["file_size"] for i, c in enumerate(checked) if c)
-            if st.button(f"🗑️ 批量删除选中 ({len(to_del)}组, ~{del_mb:.0f}MB)", key="dup_batch"):
+            if st.button(f"🗑️ 批量删除选中 ({len(to_del)}组, ~{_format_size(del_bytes)})", key="dup_batch"):
                 ok, fail, skip = _safe_delete_batch(to_del)
                 if fail == 0 and skip == 0: st.success(f"已删除 {ok} 个")
                 else: st.warning(f"{ok} 成功, {fail} 失败, {skip} 跳过(文件不存在)")
