@@ -12,6 +12,15 @@ import webbrowser as _webbrowser
 from datetime import date
 from analyzers.health_scorer import calculate as calc_health
 
+STORAGE_DIRS = [
+    ("Downloads", "下载目录", "C:/Users/Administrator/Downloads"),
+    ("Desktop", "桌面", "C:/Users/Administrator/Desktop"),
+    ("Documents", "文档", "C:/Users/Administrator/Documents"),
+    ("WeChat Files", "微信文件", "D:/WeChat Files"),
+    ("Obsidian", "知识库", "E:/知识库obsidian"),
+    ("Projects", "项目目录", "E:/创业项目"),
+]
+
 DB_FILE = r"E:\创业项目\GraceOS\09_Database\graceos.db"
 ARCHIVE_DIR = r"E:\归档"
 RECYCLE_DIR = r"E:\回收站"
@@ -430,16 +439,8 @@ with tabs[3]:
 # ===== TAB 4: STORAGE =====
 with tabs[4]:
     st.header("📊 存储空间分析")
-    dirs_info = [
-        ("Downloads", "下载目录", "C:/Users/Administrator/Downloads"),
-        ("Desktop", "桌面", "C:/Users/Administrator/Desktop"),
-        ("Documents", "文档", "C:/Users/Administrator/Documents"),
-        ("WeChat Files", "微信文件", "D:/WeChat Files"),
-        ("Obsidian", "知识库", "E:/知识库obsidian"),
-        ("Projects", "项目目录", "E:/创业项目"),
-    ]
     results = []
-    for name, label, dpath in dirs_info:
+    for name, label, dpath in STORAGE_DIRS:
         dpath_norm = os.path.normpath(dpath)
         if os.path.exists(dpath_norm):
             total_size = 0; file_count = 0
