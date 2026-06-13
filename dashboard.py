@@ -420,7 +420,21 @@ with tabs[2]:
         stale = pd.read_sql_query("SELECT name AS 软件名称, version AS 版本号, install_date AS 安装日期 FROM software WHERE install_date IS NOT NULL AND install_date != '' ORDER BY install_date ASC LIMIT 30", conn)
         if not stale.empty:
             stale["安装日期"] = stale["安装日期"].apply(lambda x: _format_date(x) if pd.notna(x) else "-")
-            st.dataframe(stale, use_container_width=True, hide_index=True)
+            h1,h2,h3,h4 = st.columns([0.5, 2.5, 1, 1])
+            h1.markdown("**卸载**"); h2.markdown("**软件名称**"); h3.markdown("**版本**"); h4.markdown("**安装日期**")
+            st.divider()
+            for i, row in stale.iterrows():
+                c1,c2,c3,c4 = st.columns([0.5, 2.5, 1, 1])
+                if c1.button("🗑️", key=f"sw_old_del_{i}"):
+                    try:
+                        subprocess.run(["winget", "uninstall", "--name", str(row["软件名称"])], capture_output=True, timeout=30)
+                        st.toast(f"已发起卸载: {row['软件名称']}")
+                    except Exception as e:
+                        st.warning(f"卸载失败: {e}")
+                if c2.button(str(row["软件名称"]), key=f"sw_old_open_{i}"):
+                    st.info(f"版本: {row['版本号']}")
+                c3.write(str(row["版本号"]) or "-")
+                c4.write(str(row["安装日期"]))
 
 # ===== TAB 3: DISKS =====
 with tabs[3]:
