@@ -193,9 +193,9 @@ with tabs[1]:
         st.caption(f"本页保留一份可释放 {_format_size(page_saved)}   |   总计可释放 {_format_size(total_saved_bytes)}")
         sel_key = "dup_checked"
         for i in range(len(df_dup_page)):
-            if f"{sel_key}_{j}" not in st.session_state:
-                st.session_state[f"{sel_key}_{j}"] = False
-        checked = [st.session_state[f"{sel_key}_{j}"] for i in range(len(df_dup_page))]
+            if f"{sel_key}_{i}" not in st.session_state:
+                st.session_state[f"{sel_key}_{i}"] = False
+        checked = [st.session_state[f"{sel_key}_{i}"] for i in range(len(df_dup_page))]
         if any(checked):
             to_del = [df_dup_page.iloc[i]["del_path"] for i, c in enumerate(checked) if c]
             del_bytes = sum(df_dup_page.iloc[i]["file_size"] for i, c in enumerate(checked) if c)
@@ -204,7 +204,7 @@ with tabs[1]:
                 if fail == 0 and skip == 0: st.success(f"已删除 {ok} 个")
                 else: st.warning(f"{ok} 成功, {fail} 失败, {skip} 跳过(不存在)")
                 for i in range(len(df_dup_page)):
-                    st.session_state[f"{sel_key}_{j}"] = False
+                    st.session_state[f"{sel_key}_{i}"] = False
                 st.rerun()
         h1,h2,h3,h4,h5,h6 = st.columns([0.3, 1, 0.7, 3, 1.2, 1])
         h1.markdown("**选**"); h2.markdown("**建议**"); h3.markdown("**删除**"); h4.markdown("**文件名**"); h5.markdown("**日期**"); h6.markdown("**大小(MB)**")
