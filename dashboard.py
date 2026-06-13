@@ -64,7 +64,8 @@ def _file_exists(fp):
     ok = os.path.exists(fp)
     return ok, "✅" if ok else "⚠️ 已不存在"
 
-def _safe_delete(fp):
+def _safe_delete(fp, conn=None):
+    """Delete file to recycle bin. If conn is provided, also remove DB record."""
     if not os.path.exists(fp):
         return False, "文件已不存在"
     try:
@@ -73,17 +74,20 @@ def _safe_delete(fp):
         if os.path.exists(target):
             target = os.path.join(RECYCLE_DIR, str(int(os.path.getmtime(fp))) + "_" + os.path.basename(fp))
         shutil.move(fp, target)
+        if conn:
+            conn.execute("DELETE FROM files WHERE file_path=?", (fp,))
+            conn.commit()
         return True, target
     except Exception as e:
         return False, str(e)
 
-def _safe_delete_batch(files):
+def _safe_delete_batch(files, conn=None):
     ok, fail, skip = 0, 0, 0
     for fp in files:
         if not os.path.exists(fp):
             skip += 1
         else:
-            success, _ = _safe_delete(fp)
+            success, _ = _safe_delete(fp, conn)
             if success: ok += 1
             else: fail += 1
     return ok, fail, skip
@@ -188,7 +192,7 @@ with tabs[1]:
             for i, row in df.iterrows():
                 c1,c2,c3,c4,c5 = st.columns([0.8, 2.5, 2.5, 1.2, 1])
                 if c1.button("🗑️", key=f"fsdel_{i}"):
-                    ok, msg = _safe_delete(row["file_path"])
+                    ok, msg = _safe_delete(row["file_path"], conn)
                     if ok: st.success("已删除"); st.rerun()
                     else: st.error(msg)
                 if c2.button(str(row["file_name"]), key=f"fsopen_{i}"):
@@ -227,7 +231,7 @@ with tabs[1]:
         else:
             to_del = []; del_bytes = 0
         if st.button(f"🗑️ 批量删除选中 ({len(to_del)}组, ~{_format_size(del_bytes)})", key="dup_batch", disabled=not any(checked)):
-            ok, fail, skip = _safe_delete_batch(to_del)
+            ok, fail, skip = _safe_delete_batch(to_del, conn)
             if fail == 0 and skip == 0: st.success(f"已删除 {ok} 个")
             else: st.warning(f"{ok} 成功, {fail} 失败, {skip} 跳过(不存在)")
             for i in range(len(df_dup_page)):
@@ -269,7 +273,7 @@ with tabs[1]:
         else:
             to_del = []; del_bytes = 0
         if st.button(f"🗑️ 批量删除选中 ({len(to_del)}个, ~{_format_size(del_bytes)})", key="big_batch", disabled=not any(checked_big)):
-            ok, fail, skip = _safe_delete_batch(to_del)
+            ok, fail, skip = _safe_delete_batch(to_del, conn)
             if fail == 0 and skip == 0: st.success(f"已删除 {ok} 个")
             else: st.warning(f"{ok} 成功, {fail} 失败, {skip} 跳过(不存在)")
             for i in range(len(df_big)):
@@ -312,7 +316,7 @@ with tabs[1]:
         else:
             to_del = []; del_bytes = 0
         if st.button(f"🗑️ 批量删除选中 ({len(to_del)}个, ~{_format_size(del_bytes)})", key="old_batch", disabled=not any(checked_old)):
-            ok, fail, skip = _safe_delete_batch(to_del)
+            ok, fail, skip = _safe_delete_batch(to_del, conn)
             if fail == 0 and skip == 0: st.success(f"已删除 {ok} 个")
             else: st.warning(f"{ok} 成功, {fail} 失败, {skip} 跳过(不存在)")
             for i in range(len(df_old)):
