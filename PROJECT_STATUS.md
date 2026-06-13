@@ -54,4 +54,7 @@
 - RULE-030 回归测试
 - RULE-031 测试证据
 - RULE-032 风险分级
-- **RULE-033 Stable Baseline 管理**
+- **RULE-033 Stable Baseline 管理
+- RULE-034 AI 任务启动检查
+- RULE-035 修改后 Smoke Test
+- RULE-036 Root Cause Analysis**
