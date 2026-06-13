@@ -103,6 +103,11 @@ st.set_page_config(page_title="个人数字资产管家", layout="wide")
 st.title("个人数字资产管家")
 conn = sqlite3.connect(DB_FILE)
 cur = conn.cursor()
+# P0 perf: ensure indexes exist (idempotent, skipped on subsequent starts)
+cur.execute("CREATE INDEX IF NOT EXISTS idx_files_name_size ON files(file_name, file_size)")
+cur.execute("CREATE INDEX IF NOT EXISTS idx_files_last_modified ON files(last_modified)")
+cur.execute("CREATE INDEX IF NOT EXISTS idx_files_size ON files(file_size)")
+conn.commit()
 tabs = st.tabs(["🏠 首页", "📂 文件", "📋 软件", "📑 磁盘", "📊 存储", "🌐 资产", "💾 备份", "📁 项目", "🧠 知识库", "📝 Prompt", "⚙️ 设置"])
 
 import webbrowser as _webbrowser
