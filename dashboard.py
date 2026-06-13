@@ -209,8 +209,9 @@ with tabs[1]:
         total_saved_bytes = int((df_dup["file_size"] * (df_dup["dc"] - 1)).sum())
         # Filter: only show files that actually exist on disk
         df_dup = df_dup[df_dup["del_path"].apply(lambda p: os.path.exists(p))]
-        total_groups = cur.execute("SELECT COUNT(*) FROM (SELECT 1 FROM files GROUP BY file_name, file_size HAVING COUNT(*) > 1)").fetchone()[0]
+    if not df_dup.empty:
         page_size = 50
+        total_groups = len(df_dup)
         if "dup_page" not in st.session_state:
             st.session_state.dup_page = 0
         total_pages = max(1, (total_groups + page_size - 1) // page_size)
@@ -267,6 +268,7 @@ with tabs[1]:
     df_big = pd.read_sql_query(f"SELECT file_name,file_path,last_modified,file_size FROM files WHERE file_size > 0 {SHORTCUT_FILTER} ORDER BY file_size DESC LIMIT 100", conn)
     if not df_big.empty:
         df_big = df_big[df_big["file_path"].apply(lambda p: os.path.exists(p))]
+    if not df_big.empty:
         sel_big = "big_checked"
         for i in range(len(df_big)):
             if f"{sel_big}_{i}" not in st.session_state:
@@ -301,7 +303,7 @@ with tabs[1]:
             c5.write(_format_date(row["last_modified"]))
             c6.write(_format_size(row["file_size"]))
     else:
-        st.info("无大文件")
+        st.info("无大文件（已全部处理或不在磁盘上）")
     st.divider()
     st.header("🕐 长期未使用文件")
     order_old = st.radio("排序", ["最久未用（旧→新）", "最近修改（新→旧）"], horizontal=True, key="old_sort")
@@ -309,6 +311,7 @@ with tabs[1]:
     df_old = pd.read_sql_query(f"SELECT file_name,file_path,last_modified,file_size FROM files WHERE file_size > 0 AND NOT (file_path LIKE '%Windows%' OR file_path LIKE '%System32%' OR file_name IN ('pagefile.sys','hiberfil.sys','swapfile.sys')) {SHORTCUT_FILTER} ORDER BY last_modified {old_order} LIMIT 100", conn)
     if not df_old.empty:
         df_old = df_old[df_old["file_path"].apply(lambda p: os.path.exists(p))]
+    if not df_old.empty:
         total_old_bytes = int(df_old["file_size"].sum())
         st.caption(f"前100个最久未使用, 共 {_format_size(total_old_bytes)}")
         sel_old = "old_checked"
