@@ -21,8 +21,19 @@
 
 | Commit | 说明 |
 |--------|------|
-| `3eb26dd` | P0 fix: checkbox empty label |
-| `HEAD` (current) | Recovery: rollback to 3eb26dd + reapply 5 features cleanly |
+| `bdbfd72` | v2.2-digital-assets: V2.1 + 数字资产中心 (tagged) |
+| `HEAD` (current) | Recovery: rollback to bdbfd72 + preserve docs only |
+
+### 2026-06-13 P0 故障恢复记录
+
+| 维度 | 说明 |
+|------|------|
+| **故障** | dashboard.py 出现 NameError: df_dup/df_dup_page not defined |
+| **根因** | commit de1fd5a (perf) 引入懒加载重构，else 块只包裹 df_dup 查询行，后续 50+ 行处理代码仍然在 else 外执行 |
+| **恢复方案** | 方案A: 回退到 bdbfd72 (v2.2-digital-assets stable) |
+| **执行** | `git reset --hard bdbfd72` + cherry-pick 52918d4 (性能分析文档) + bc562d1 (规则同步) |
+| **丢弃** | de1fd5a (perf indexes+lazy load+cache) + 3dcdbca (fix indentation) — 两个 commit 均为问题源头 |
+| **结果** | AST 验证通过，无 lazy load/session_state 污染代码 |
 
 ## 3. V2.1 功能清单
 
