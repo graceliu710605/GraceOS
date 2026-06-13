@@ -1,11 +1,11 @@
 ﻿;===========================================
-; GraceOS Setup Installer - NSIS Script V2
+; GraceOS Setup Installer - NSIS Script V2.1
 ;===========================================
 Unicode true
 !include "MUI2.nsh"
 
 !define PRODUCT_NAME "个人数字资产管家"
-!define PRODUCT_VERSION "V2 RC2"
+!define PRODUCT_VERSION "V2.1"
 !define PRODUCT_PUBLISHER "GraceOS"
 
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
@@ -14,6 +14,11 @@ InstallDir "$PROGRAMFILES\${PRODUCT_NAME}"
 InstallDirRegKey HKLM "Software\${PRODUCT_NAME}" ""
 RequestExecutionLevel admin
 SetCompressor /SOLID lzma
+
+; Auto-run checkbox on finish page
+!define MUI_FINISHPAGE_RUN "$INSTDIR\app\启动个人数字资产管家.bat"
+!define MUI_FINISHPAGE_RUN_TEXT "安装完成后立即运行个人数字资产管家"
+!define MUI_FINISHPAGE_RUN_CHECKED
 
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_DIRECTORY

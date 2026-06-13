@@ -1,80 +1,82 @@
 ﻿# Changelog
 
+## [V2.1] - 2026-06-13
+
+### P1: 首页导航修复
+- 首页资产中心卡片（文件/软件/磁盘/存储）点击可直接跳转到对应模块
+- 评分所有分项统一为 /100 展示（文件健康度/文件活跃度/磁盘健康度/软件健康度）
+- 综合评分改为四项平均值
+
+### P1: 文件中心增强
+- 文件搜索结果增加「生成日期」列
+- 文件搜索支持删除按钮（单个 + 批量）
+- 点击文件名直接打开文件
+
+### P1: 软件中心增强
+- 点击软件名称自动启动软件（在安装目录查找 .exe）
+- 软件扫描器改进注册表匹配逻辑，提升安装路径获取率
+- 字段中文化: name→软件名称, version→版本号, install_date→安装日期
+
+### P2: 重复文件中心增强
+- 增加「建议保留」和「建议删除」列
+- 增加单个删除按钮和批量删除按钮
+- 支持多行选择（复选框）
+
+### P2: Top 100 大文件增强
+- 增加「生成日期」列
+- 增加单个删除按钮和批量删除按钮
+
+### P2: 长期未使用文件增强
+- 「最后修改」列改为「生成日期」
+- 增加单个删除按钮和批量删除按钮
+- 支持多行选择
+
+### P2: 软件重复版本增强
+- 增加「建议保留」（最新版本）和「建议卸载」（最旧版本）标识
+- 增加单个卸载按钮（winget 卸载）
+- 增加批量卸载按钮
+
+### P3: 安装程序增强
+- 安装完成页增加「安装完成后立即运行个人数字资产管家」复选框（默认勾选）
+
+### 修改文件
+| 文件 | 说明 |
+|------|------|
+| `dashboard.py` | P1/P2/P3 全部功能，自定义 Tab 导航 |
+| `analyzers/health_scorer.py` | P3 评分 /100 + 综合评分平均值 |
+| `scanners/software_scorer.py` | P1 注册表匹配增强 |
+| `setup_build/setup.nsi` | P3 安装后自动运行复选框 |
+
+---
+
 ## [Unreleased]
 
 ### Added (2026-06-12 磁盘资产中心)
-
 - 磁盘资产中心: Dashboard 新增独立「💾 磁盘资产中心」Tab
-  - 显示所有磁盘（C盘、D盘等）的容量、已用、剩余空间
-  - 使用率进度条 + 颜色提示（绿 <70% / 黄 70-90% / 红 >90%）
-- 磁盘导入器: 新增 `disk_to_sqlite.py`，将 PowerShell Get-PSDrive JSON 转换为 SQLite `disks` 表
+- 磁盘导入器: 新增 `disk_to_sqlite.py`
 
 ### Fixed (2026-06-12)
-
 - `software_scanner.py`: 修复扫描结果始终为 0 的 Bug
-  - 根因 1: `encoding="utf-8"` 强制 UTF-8 解码中文 Windows 的 GBK 输出，`errors="ignore"` 静默丢弃所有字符
-  - 根因 2: 只读 `result.stdout`，部分 winget 版本将输出写入 `stderr`
-  - 修复: 移除强制 UTF-8 编码；`errors` 改为 `replace`；优先读 stdout，回退 stderr
 
 ### Added (2026-06-12)
-
 - 软件资产中心: Dashboard 新增独立「💻 软件资产中心」页面
-- 软件扫描器 V2: `software_scanner.py` 重写，支持结构化解析
-  - 解析 `winget list` 输出为 Name / Id / Version / Source 字段
-  - 查询 Windows 注册表获取 Publisher / InstallDate / EstimatedSize
-  - 自动合并 winget 和注册表数据
-- 软件导入器: 新增 `software_to_sqlite.py`，将结构化数据导入 `software` 表
-- 软件搜索: 支持按软件名称或发布商搜索
-- 软件排序: 支持按名称、安装日期、大小排序
-- 发布商统计: 显示发布商 Top 20 分布
+- 软件扫描器 V2 重写，支持结构化解析
+- 软件导入器: 新增 `software_to_sqlite.py`
+- 软件搜索/排序/发布商统计
 
 ### Added (2026-06-11)
-
-- Dashboard: 文件操作按钮 -- 打开文件、打开目录、复制路径
-- Dashboard: 文件搜索结果按文件大小降序排列
-- Dashboard: 版本号从 V3 修正为 V1
-- Dashboard: 每行文件额外显示大小和修改时间信息
-
-### Changed (2026-06-11)
-
-- Dashboard: `st.dataframe` 替换为逐行渲染 + 每行三个操作按钮
-- Dashboard: 各板块默认显示 Top 50（原 Top 100）以提升交互性能
-- Dashboard: 重复文件统计增加 `MIN(file_path)` 以支持操作按钮
+- Dashboard: 文件操作按钮
+- Dashboard: 版本号修正
 
 ## [V1] - 2026-06-10
-
-### Added
-
 - GraceOS 项目初始化
-- 软件扫描器 (winget)
-- 软件搜索 (JSON 原始字符串)
-- 磁盘扫描器 (PowerShell Get-PSDrive)
-- 文件扫描器 (os.walk C:/D:/E:)
-- 大文件分析器
-- JSON 到 SQLite 导入器 (流式, 批量 5000)
-- Streamlit Dashboard (文件搜索、大文件、重复文件、长期未使用)
-- CLI 入口 main.py
+- 软件/磁盘/文件扫描器
+- JSON 到 SQLite 导入器
+- Streamlit Dashboard
 
 ---
 
 ## V2 RC2 (2026-06-13)
-
-### P0: 启动失败修复
-- **Bug**: Setup.exe 安装后 localhost:8501 拒绝连接
-- **根因 1**: BAT 中 Python 路径 `..\python\python.exe` 不存在（Python 在根目录，不在 python/ 子目录）
-- **根因 2**: BAT 运行 `python.exe dashboard.py` 而非 `python -m streamlit run`
-- **修复**: Python 嵌入环境移至 `python/` 子目录 + BAT 使用 `python -m streamlit run`
-
-### 安装目录结构优化
-- 旧版根目录散落 35+ 个 .pyd/.dll 文件
-- 新版仅 2 个子目录: `python/` + `app/`
-
-### 发布流程完善
-- 新增 `docs/RELEASE_CHECKLIST.md` 5 项门禁规则
-- `DEVELOPMENT_RULES.md` 新增发布门禁章节
-- 新增 `docs/INSTALL_TEST_REPORT_TEMPLATE.md` 标准模板
-- 新增 `setup_build/` 构建源码: NSIS 脚本 + build.ps1 + README
-
-### 交付物
-- 个人数字资产管家_Setup.exe (71.1 MB, 旧版 108 MB)
-- 5 项门禁全部通过 (INSTALL_TEST_REPORT.md)
+- P0: 启动失败修复（BAT Python 路径 + streamlit 启动方式）
+- 安装目录结构优化
+- 发布流程完善（门禁规则 + 检查清单）

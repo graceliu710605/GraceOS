@@ -45,16 +45,16 @@ def calculate(conn=None):
 
         # Scoring (each dimension 25 max, total 100)
         dup_ratio = dup_files / max(total_files, 1)
-        dup_score = max(0, min(25, int(25 * (1 - dup_ratio * 8))))
+        dup_score = max(0, min(100, int(100 * (1 - dup_ratio * 8))))
 
         unused_gb = unused_mb / 1024
-        unused_score = max(0, min(25, int(25 * (1 - min(unused_gb, 100) / 100))))
+        unused_score = max(0, min(100, int(100 * (1 - min(unused_gb, 100) / 100))))
 
-        disk_score = max(0, min(25, int(25 * (1 - max(0, c_pct - 70) / 30))))
+        disk_score = max(0, min(100, int(100 * (1 - max(0, c_pct - 70) / 30))))
 
-        sw_score = max(0, min(25, 25 - min(sw_multi * 3, 25)))
+        sw_score = max(0, min(100, 100 - min(sw_multi * 3, 100)))
 
-        total = dup_score + unused_score + disk_score + sw_score
+        total = int((dup_score + unused_score + disk_score + sw_score) / 4)
 
         cur.execute("""
             INSERT INTO health_scores

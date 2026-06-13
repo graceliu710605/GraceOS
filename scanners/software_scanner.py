@@ -95,19 +95,44 @@ def _query_registry():
     return results
 
 def _merge_registry_data(software_list, registry_data):
+    """Merge registry data into software list with improved fuzzy matching"""
     for sw in software_list:
         sw_name = sw.get("name","").lower()
         if not sw_name: continue
         for reg in registry_data:
             display = (reg.get("DisplayName") or "").lower()
             if not display: continue
-            if sw_name == display or sw_name in display or display in sw_name:
+            # Try: exact match first, then substring match, then token match
+            matched = False
+            if sw_name == display:
+                matched = True
+            elif sw_name in display or display in sw_name:
+                matched = True
+            else:
+                # Token-based matching for compound names
+                sw_tokens = set(sw_name.split())
+                disp_tokens = set(display.split())
+                common = sw_tokens & disp_tokens
+                if len(sw_tokens) > 1 and len(common) >= len(sw_tokens) * 0.6:
+                    matched = True
+            if matched:
                 if reg.get("Publisher"): sw["publisher"] = str(reg["Publisher"]).strip()
                 if reg.get("InstallDate"): sw["install_date"] = str(reg["InstallDate"]).strip()
                 if reg.get("InstallLocation"): sw["install_path"] = str(reg["InstallLocation"]).strip()
                 if reg.get("EstimatedSize") and reg["EstimatedSize"] > 0:
                     sw["size_bytes"] = int(reg["EstimatedSize"]) * 1024
                 break
+    # Second pass: try to fill install_path from winget data (via MSI/ARP info)
+    for sw in software_list:
+        if not sw.get("install_path") and sw.get("id"):
+            for reg in registry_data:
+                rid = (reg.get("DisplayName") or "").lower()
+                sw_id = sw.get("id", "").lower()
+                if rid and sw_id and (sw_id in rid or rid in sw_id):
+                    il = reg.get("InstallLocation")
+                    if il:
+                        sw["install_path"] = str(il).strip()
+                        break
 
 def scan():
     print("Starting software scan...")
