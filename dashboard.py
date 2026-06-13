@@ -183,7 +183,7 @@ with tabs[1]:
     st.header("🔍 文件搜索")
     kw = st.text_input("搜索文件名关键字", placeholder="如: .pdf, 报告...", key="fs_kw")
     if kw:
-        df = pd.read_sql_query(f"SELECT file_name,file_path,last_modified,file_size FROM files WHERE file_name LIKE ? {SHORTCUT_FILTER} ORDER BY file_size DESC LIMIT 50", conn, params=[f"%{kw}%"])
+        df = pd.read_sql_query(f"SELECT file_name,file_path,last_modified,file_size FROM files WHERE file_name LIKE ? AND file_size > 0 {SHORTCUT_FILTER} ORDER BY file_size DESC LIMIT 50", conn, params=[f"%{kw}%"])
         st.caption(f"找到 {len(df)} 条")
         if not df.empty:
             h1,h2,h3,h4,h5 = st.columns([0.8, 2.5, 2.5, 1.2, 1])
