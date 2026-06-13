@@ -57,4 +57,5 @@
 - **RULE-033 Stable Baseline 管理
 - RULE-034 AI 任务启动检查
 - RULE-035 修改后 Smoke Test
-- RULE-036 Root Cause Analysis**
+- RULE-036 Root Cause Analysis
+- RULE-037 UI First**
