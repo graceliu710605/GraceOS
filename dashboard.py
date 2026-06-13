@@ -175,6 +175,22 @@ with tabs[1]:
     if not df_dup.empty:
         total_mb = (df_dup["file_size"] * (df_dup["dc"] - 1)).sum()
         st.caption(f"前50组，保留一份可释放约 {_format_size(int(total_mb*1048576))}")
+        total_groups = len(df_dup)
+        total_saved_bytes = int((df_dup["file_size"] * (df_dup["dc"] - 1)).sum())
+        page_size = 50
+        if "dup_page" not in st.session_state:
+            st.session_state.dup_page = 0
+        total_pages = max(1, (total_groups + page_size - 1) // page_size)
+        start = st.session_state.dup_page * page_size
+        df_dup_page = df_dup.iloc[start:start+page_size]
+        pc1, pc2, pc3 = st.columns([1, 2, 1])
+        if pc1.button("◀ 上一页", disabled=st.session_state.dup_page <= 0, key="dup_prev"):
+            st.session_state.dup_page -= 1; st.rerun()
+        pc2.write(f"第 {st.session_state.dup_page+1}/{total_pages} 页  (共 {total_groups} 组)")
+        if pc3.button("下一页 ▶", disabled=st.session_state.dup_page >= total_pages-1, key="dup_next"):
+            st.session_state.dup_page += 1; st.rerun()
+        page_saved = int((df_dup_page["file_size"] * (df_dup_page["dc"] - 1)).sum())
+        st.caption(f"本页保留一份可释放 {_format_size(page_saved)}   |   总计可释放 {_format_size(total_saved_bytes)}")
         sel_key = "dup_checked"
         for i in range(len(df_dup_page)):
             if f"{sel_key}_{j}" not in st.session_state:
@@ -182,7 +198,7 @@ with tabs[1]:
         checked = [st.session_state[f"{sel_key}_{j}"] for i in range(len(df_dup_page))]
         if any(checked):
             to_del = [df_dup_page.iloc[i]["del_path"] for i, c in enumerate(checked) if c]
-            del_bytes = sum(df_dup_page.iloc[i]["size_mb"] for i, c in enumerate(checked) if c)
+            del_bytes = sum(df_dup_page.iloc[i]["file_size"] for i, c in enumerate(checked) if c)
             if st.button(f"🗑️ 批量删除选中 ({len(to_del)}组, ~{_format_size(del_bytes)})", key="dup_batch"):
                 ok, fail, skip = _safe_delete_batch(to_del)
                 if fail == 0 and skip == 0: st.success(f"已删除 {ok} 个")
