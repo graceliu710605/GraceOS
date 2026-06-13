@@ -1,0 +1,6 @@
+pandas
+streamlit
+psutil
+tabulate
+openpyxl
+ijson

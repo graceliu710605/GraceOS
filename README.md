@@ -1,4 +1,4 @@
-# 个人数字资产管家
+﻿# 个人数字资产管家
 
 > GraceOS — Personal Digital Operating System
 
@@ -139,6 +139,22 @@ GraceOS_V1/
 - [数据库设计](docs/DATABASE.md)
 - [发布说明](docs/RELEASE_NOTE.md)
 
+
+---
+
+## 📄 文档导航
+
+| 文档 | 用途 |
+|------|------|
+| [PROJECT_HANDOVER.md](PROJECT_HANDOVER.md) | 👈 **项目唯一入口，新人先读** |
+| [PROJECT_STATUS.md](PROJECT_STATUS.md) | 当前版本状态、已完成/待办 |
+| [ROADMAP.md](ROADMAP.md) | 版本路线图 |
+| [CHANGELOG.md](CHANGELOG.md) | 变更记录 |
+| [DEVELOPMENT_RULES.md](DEVELOPMENT_RULES.md) | 开发规范 |
+| [INSTALL_GUIDE.md](INSTALL_GUIDE.md) | 安装指南 |
+| [docs/RELEASE_NOTE.md](docs/RELEASE_NOTE.md) | 最新发布说明 |
+
 ## License
 
 MIT
+

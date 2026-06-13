@@ -1,4 +1,4 @@
-# GraceOS 路线图
+﻿# GraceOS 路线图
 
 ## V1.0 — 数字资产盘点（已完成 ✅）
 **时间**: 2026年6月 | **状态**: RC1
@@ -9,6 +9,15 @@
 - 界面：Streamlit 表格模式，单行显示，横向滚动
 
 ---
+
+---
+
+## 📄 文档导航
+
+> **入口文件**: [PROJECT_HANDOVER.md](PROJECT_HANDOVER.md) — 项目唯一入口
+> **当前状态**: [PROJECT_STATUS.md](PROJECT_STATUS.md)
+> **变更记录**: [CHANGELOG.md](CHANGELOG.md)
+> **开发规范**: [DEVELOPMENT_RULES.md](DEVELOPMENT_RULES.md)
 
 ## V1.5 — 稳定与优化（近期）
 **优先级**: P0 | **预计工作量**: 1周
@@ -116,3 +125,4 @@
 - 智能分类引擎（自动识别文件类型/项目）
 - 插件市场（社区贡献）
 - 自然语言操作（"把上周的截图归档"）
+

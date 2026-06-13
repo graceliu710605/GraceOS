@@ -1,4 +1,4 @@
-# Changelog
+﻿# Changelog
 
 ## [Unreleased]
 
@@ -54,3 +54,27 @@
 - JSON 到 SQLite 导入器 (流式, 批量 5000)
 - Streamlit Dashboard (文件搜索、大文件、重复文件、长期未使用)
 - CLI 入口 main.py
+
+---
+
+## V2 RC2 (2026-06-13)
+
+### P0: 启动失败修复
+- **Bug**: Setup.exe 安装后 localhost:8501 拒绝连接
+- **根因 1**: BAT 中 Python 路径 `..\python\python.exe` 不存在（Python 在根目录，不在 python/ 子目录）
+- **根因 2**: BAT 运行 `python.exe dashboard.py` 而非 `python -m streamlit run`
+- **修复**: Python 嵌入环境移至 `python/` 子目录 + BAT 使用 `python -m streamlit run`
+
+### 安装目录结构优化
+- 旧版根目录散落 35+ 个 .pyd/.dll 文件
+- 新版仅 2 个子目录: `python/` + `app/`
+
+### 发布流程完善
+- 新增 `docs/RELEASE_CHECKLIST.md` 5 项门禁规则
+- `DEVELOPMENT_RULES.md` 新增发布门禁章节
+- 新增 `docs/INSTALL_TEST_REPORT_TEMPLATE.md` 标准模板
+- 新增 `setup_build/` 构建源码: NSIS 脚本 + build.ps1 + README
+
+### 交付物
+- 个人数字资产管家_Setup.exe (71.1 MB, 旧版 108 MB)
+- 5 项门禁全部通过 (INSTALL_TEST_REPORT.md)

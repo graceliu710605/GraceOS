@@ -1,8 +1,19 @@
-<!--
+﻿<!--
   PROJECT_STATUS.md - GraceOS V1
   生成日期: 2026-06-11
   生成方式: Codex 自动分析代码库
 -->
+
+
+## 📄 文档导航
+
+> **入口文件**: [PROJECT_HANDOVER.md](PROJECT_HANDOVER.md) — 项目唯一入口
+> **产品介绍**: [README.md](README.md)
+> **路线图**: [ROADMAP.md](ROADMAP.md)
+> **变更记录**: [CHANGELOG.md](CHANGELOG.md)
+> **开发规范**: [DEVELOPMENT_RULES.md](DEVELOPMENT_RULES.md)
+
+---
 
 # GraceOS V1 - 项目状态报告
 
@@ -784,3 +795,39 @@ GraceOS V2 Beta 已升级为**可交付产品**:
 - **发布标准**: 非开发人员可直接安装运行
 - **冻结机制**: 发布阶段禁止新增功能
 - **跨项目复用**: 适用于 GraceOS 及未来所有项目
+
+---
+
+## setup_build 构建目录建立 ✅
+**日期**: 2026-06-13
+
+### 新增目录: setup_build/
+
+| 文件 | 说明 |
+|------|------|
+| setup.nsi | NSIS 安装脚本（BAT 路径已修正） |
+| uild.ps1 | 自动化构建脚本（下载 Python embed + deps + 复制 app） |
+| README_BUILD.md | 构建说明 |
+| python313._pth.template | site-packages 配置模板 |
+| pp/启动个人数字资产管家.bat | **已修正**启动脚本 |
+
+### BAT 修正内容
+
+`
+旧: "..\python\python.exe" "dashboard.py"
+新: "..\python.exe" -m streamlit run "dashboard.py" --server.port 8501
+`
+
+### 构建流程
+
+`powershell
+cd setup_build
+.\build.ps1          # 下载 Python embed + 安装依赖
+makensis setup.nsi   # 生成 ../个人数字资产管家_Setup.exe
+`
+
+### 前置条件
+
+- NSIS 3.x: winget install NSIS.NSIS
+- 网络（下载 Python embeddable ~9MB）
+
