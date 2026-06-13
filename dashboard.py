@@ -230,7 +230,7 @@ with tabs[1]:
             for i in range(len(df_dup_page)):
                 st.session_state[f"{sel_key}_{i}"] = False
             st.rerun()
-        h1,h2,h3,h4,h5,h6 = st.columns([0.3, 1, 0.7, 2.5, 2.5, 1.2, 1])
+        h1,h2,h3,h4,h5,h6,h7 = st.columns([0.3, 1, 0.7, 2.5, 2.5, 1.2, 1])
         h1.markdown("**选**"); h2.markdown("**建议**"); h3.markdown("**删除**"); h4.markdown("**文件名**"); h5.markdown("**所在目录**"); h6.markdown("**日期**"); h7.markdown("**大小**")
         st.divider()
         for j, (_, row) in enumerate(df_dup_page.iterrows()):
