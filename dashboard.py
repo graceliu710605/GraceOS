@@ -292,7 +292,9 @@ with tabs[1]:
         st.info("无大文件")
     st.divider()
     st.header("🕐 长期未使用文件")
-    df_old = pd.read_sql_query(f"SELECT file_name,file_path,last_modified,file_size FROM files WHERE 1=1 AND NOT (file_path LIKE '%Windows%' OR file_path LIKE '%System32%' OR file_name IN ('pagefile.sys','hiberfil.sys','swapfile.sys')) {SHORTCUT_FILTER} ORDER BY last_modified ASC LIMIT 100", conn)
+    order_old = st.radio("排序", ["最久未用（旧→新）", "最近修改（新→旧）"], horizontal=True, key="old_sort")
+    old_order = "ASC" if "最久" in order_old else "DESC"
+    df_old = pd.read_sql_query(f"SELECT file_name,file_path,last_modified,file_size FROM files WHERE 1=1 AND NOT (file_path LIKE '%Windows%' OR file_path LIKE '%System32%' OR file_name IN ('pagefile.sys','hiberfil.sys','swapfile.sys')) {SHORTCUT_FILTER} ORDER BY last_modified {old_order} LIMIT 100", conn)
     if not df_old.empty:
         total_old_bytes = int(df_old["file_size"].sum())
         st.caption(f"前100个最久未使用, 共 {_format_size(total_old_bytes)}")
