@@ -419,24 +419,32 @@ with tabs[2]:
             st.success("✅ 无多版本软件")
         st.divider()
         st.header("最早安装的软件 (Top 30)")
-        stale = pd.read_sql_query("SELECT name AS 软件名称, version AS 版本号, install_date AS 安装日期 FROM software WHERE install_date IS NOT NULL AND install_date != '' ORDER BY install_date ASC LIMIT 30", conn)
+        order_stale = st.radio("排序", ["最早安装（旧→新）", "最近安装（新→旧）"], horizontal=True, key="sw_stale_sort")
+        stale_dir = "ASC" if "最早" in order_stale else "DESC"
+        stale = pd.read_sql_query(f"SELECT name AS 软件名称, version AS 版本号, install_date AS 安装日期, install_path AS 安装路径 FROM software WHERE install_date IS NOT NULL AND install_date != '' ORDER BY install_date {stale_dir} LIMIT 30", conn)
         if not stale.empty:
             stale["安装日期"] = stale["安装日期"].apply(lambda x: _format_date(x) if pd.notna(x) else "-")
-            h1,h2,h3,h4 = st.columns([0.5, 2.5, 1, 1])
-            h1.markdown("**卸载**"); h2.markdown("**软件名称**"); h3.markdown("**版本**"); h4.markdown("**安装日期**")
+            h1,h2,h3,h4,h5 = st.columns([0.5, 0.5, 2, 1, 2])
+            h1.markdown("**卸载**"); h2.markdown("**启动**"); h3.markdown("**软件名称**"); h4.markdown("**版本**"); h5.markdown("**安装路径**")
             st.divider()
             for i, row in stale.iterrows():
-                c1,c2,c3,c4 = st.columns([0.5, 2.5, 1, 1])
+                c1,c2,c3,c4,c5 = st.columns([0.5, 0.5, 2, 1, 2])
                 if c1.button("🗑️", key=f"sw_old_del_{i}"):
                     try:
                         subprocess.run(["winget", "uninstall", "--name", str(row["软件名称"])], capture_output=True, timeout=30)
                         st.toast(f"已发起卸载: {row['软件名称']}")
                     except Exception as e:
                         st.warning(f"卸载失败: {e}")
-                if c2.button(str(row["软件名称"]), key=f"sw_old_open_{i}"):
-                    st.info(f"版本: {row['版本号']}")
-                c3.write(str(row["版本号"]) or "-")
-                c4.write(str(row["安装日期"]))
+                # Launch button
+                if c2.button("🚀", key=f"sw_old_launch_{i}"):
+                    ip = row.get("安装路径") or ""
+                    launched, result = _launch_software(ip, str(row["软件名称"]))
+                    if launched: st.toast(f"启动: {row['软件名称']}")
+                    else: st.toast("无法启动: 无安装路径")
+                if c3.button(str(row["软件名称"]), key=f"sw_old_open_{i}"):
+                    st.info(f"版本: {row['版本号']} | 安装日期: {row['安装日期']}")
+                c4.write(str(row["版本号"]) or "-")
+                c5.write(str(row["安装路径"]) or "-")
 
 # ===== TAB 3: DISKS =====
 with tabs[3]:
