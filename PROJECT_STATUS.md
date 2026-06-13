@@ -13,18 +13,37 @@
 
 ## 1. 当前版本
 
-**版本**: V2.1
+**版本**: V2.2-stable
 **日期**: 2026-06-13
-**状态**: Sprint 完成，恢复稳定基线
+**状态**: Beta 测试 — 14 个 commit 已推送到 GitHub
 
 ## 2. Stable Baseline
 
 | Commit | 说明 |
 |--------|------|
 | `bdbfd72` | v2.2-digital-assets: V2.1 + 数字资产中心 (tagged) |
-| `HEAD` (current) | Recovery: rollback to bdbfd72 + preserve docs only |
+| `HEAD` (`947ae2f`) | fix: prevent empty DataFrame after stale filtering |
 
-### 2026-06-13 P0 故障恢复记录
+### 2026-06-13 V2.2 修复记录 (14 commits)
+
+| # | Commit | 说明 |
+|---|--------|------|
+| 1 | `e7143cb` | P0: size_mb KeyError + dup LIMIT + UI cleanup |
+| 2 | `f81d890` | perf: @st.cache_data for Tab1 stats |
+| 3 | `ab08a51` | refactor: STORAGE_DIRS config |
+| 4-6 | `c429910`→`c1675de` | fix: dir column + stale disable + software table |
+| 7 | `eea334a` | fix: h7 NameError in dup header |
+| 8 | `af409f8` | feat: old files sort toggle |
+| 9 | `3c49f5d` | feat: oldest software sort + launch + path |
+| 10 | `1f6d2f3` | batch fixes #1-11 |
+| 11 | `9eebd45` | fix: #4 delete removes DB record |
+| 12 | `b19d3ab` | fix: 0-byte filter in search |
+| 13 | `b1fa84f` | fix: stale record filter all tables |
+| 14 | `947ae2f` | fix: empty DataFrame guard after filter |
+
+### Sanity Test (2026-06-13 23:07)
+
+**11/11 PASS** — 见 [QA_REPORT.md](docs/QA_REPORT.md)
 
 | 维度 | 说明 |
 |------|------|
