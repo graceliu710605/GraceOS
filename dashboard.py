@@ -145,11 +145,20 @@ with tabs[0]:
     if st.button("🔄 刷新评分"):
         st.rerun()
 
-# ===== TAB 1: FILES =====
-with tabs[1]:
+@st.cache_data(ttl=300)
+def _get_file_stats(db_path):
+    """Cache aggregate file stats for 5 minutes"""
+    conn = sqlite3.connect(db_path)
+    cur = conn.cursor()
     cur.execute("SELECT COUNT(*) FROM files"); fc = cur.fetchone()[0]
     cur.execute("SELECT COUNT(*) FROM (SELECT file_name, file_size FROM files GROUP BY file_name, file_size HAVING COUNT(*)>1)"); dg = cur.fetchone()[0]
     cur.execute("SELECT COALESCE(SUM(cnt),0) FROM (SELECT COUNT(*) AS cnt FROM files GROUP BY file_name, file_size HAVING COUNT(*)>1)"); dfc = cur.fetchone()[0]
+    conn.close()
+    return fc, dg, dfc
+
+# ===== TAB 1: FILES =====
+with tabs[1]:
+    fc, dg, dfc = _get_file_stats(DB_FILE)
     c1,c2,c3,c4 = st.columns(4)
     c1.metric("文件总数", f"{fc:,}")
     c2.metric("重复组数", f"{dg:,}")
