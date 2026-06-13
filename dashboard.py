@@ -8,6 +8,7 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 import subprocess, shutil
+import webbrowser as _webbrowser
 from datetime import date
 from analyzers.health_scorer import calculate as calc_health
 
@@ -108,9 +109,8 @@ cur.execute("CREATE INDEX IF NOT EXISTS idx_files_name_size ON files(file_name, 
 cur.execute("CREATE INDEX IF NOT EXISTS idx_files_last_modified ON files(last_modified)")
 cur.execute("CREATE INDEX IF NOT EXISTS idx_files_size ON files(file_size)")
 conn.commit()
-tabs = st.tabs(["🏠 首页", "📂 文件", "📋 软件", "📑 磁盘", "📊 存储", "🌐 资产", "💾 备份", "📁 项目", "🧠 知识库", "📝 Prompt", "⚙️ 设置"])
+tabs = st.tabs(["🏠 首页", "📂 文件", "📋 软件", "📑 磁盘", "📊 存储", "🌐 资产", "⚙️ 设置"])
 
-import webbrowser as _webbrowser
 # ===== TAB 0: HOME =====
 with tabs[0]:
     st.header("数字健康评分")
@@ -177,12 +177,10 @@ with tabs[1]:
                 c4.write(_format_size(row["file_size"]))
     st.divider()
     st.header("🔧 重复文件")
-    df_dup = pd.read_sql_query("""SELECT file_name, file_size, COUNT(*) AS dc, MIN(file_path) AS keep_path, MAX(file_path) AS del_path FROM files GROUP BY file_name, file_size HAVING COUNT(*) > 1 ORDER BY dc DESC""", conn)
+    df_dup = pd.read_sql_query("""SELECT file_name, file_size, COUNT(*) AS dc, MIN(file_path) AS keep_path, MAX(file_path) AS del_path FROM files GROUP BY file_name, file_size HAVING COUNT(*) > 1 ORDER BY dc DESC LIMIT 500""", conn)
     if not df_dup.empty:
-        total_mb = (df_dup["file_size"] * (df_dup["dc"] - 1)).sum()
-        st.caption(f"前50组，保留一份可释放约 {_format_size(int(total_mb*1048576))}")
-        total_groups = len(df_dup)
         total_saved_bytes = int((df_dup["file_size"] * (df_dup["dc"] - 1)).sum())
+        total_groups = cur.execute("SELECT COUNT(*) FROM (SELECT 1 FROM files GROUP BY file_name, file_size HAVING COUNT(*) > 1)").fetchone()[0]
         page_size = 50
         if "dup_page" not in st.session_state:
             st.session_state.dup_page = 0
@@ -241,8 +239,8 @@ with tabs[1]:
         checked_big = [st.session_state[f"{sel_big}_{i}"] for i in range(len(df_big))]
         if any(checked_big):
             to_del = [df_big.iloc[i]["file_path"] for i, c in enumerate(checked_big) if c]
-            del_mb = sum(df_big.iloc[i]["size_mb"] for i, c in enumerate(checked_big) if c)
-            if st.button(f"🗑️ 批量删除选中 ({len(to_del)}个, ~{del_mb:.0f}MB)", key="big_batch"):
+            del_bytes = sum(int(df_big.iloc[i]["file_size"]) for i, c in enumerate(checked_big) if c)
+            if st.button(f"🗑️ 批量删除选中 ({len(to_del)}个, ~{_format_size(del_bytes)})", key="big_batch"):
                 ok, fail, skip = _safe_delete_batch(to_del)
                 if fail == 0 and skip == 0: st.success(f"已删除 {ok} 个")
                 else: st.warning(f"{ok} 成功, {fail} 失败, {skip} 跳过(不存在)")
@@ -278,8 +276,8 @@ with tabs[1]:
         checked_old = [st.session_state[f"{sel_old}_{i}"] for i in range(len(df_old))]
         if any(checked_old):
             to_del = [df_old.iloc[i]["file_path"] for i, c in enumerate(checked_old) if c]
-            del_mb = sum(df_old.iloc[i]["size_mb"] for i, c in enumerate(checked_old) if c)
-            if st.button(f"🗑️ 批量删除选中 ({len(to_del)}个, ~{del_mb:.0f}MB)", key="old_batch"):
+            del_bytes = sum(int(df_old.iloc[i]["file_size"]) for i, c in enumerate(checked_old) if c)
+            if st.button(f"🗑️ 批量删除选中 ({len(to_del)}个, ~{_format_size(del_bytes)})", key="old_batch"):
                 ok, fail, skip = _safe_delete_batch(to_del)
                 if fail == 0 and skip == 0: st.success(f"已删除 {ok} 个")
                 else: st.warning(f"{ok} 成功, {fail} 失败, {skip} 跳过(不存在)")
@@ -530,10 +528,9 @@ with tabs[5]:
         else:
             st.info("暂无资产")
 
-# ===== TABS 6-9: FUTURE MODULES =====
-for i, (tab, name) in enumerate([(tabs[6], "备份中心"), (tabs[7], "项目管理中心"), (tabs[8], "知识库中心"), (tabs[9], "Prompt管理中心"), (tabs[10], "设置中心")]):
-    with tab:
-        st.header(f"🚧 {name}")
-        st.info(f"{name} - Future Module（待开发）")
+# ===== TAB 6: SETTINGS =====
+with tabs[6]:
+    st.header("⚙️ 设置")
+    st.info("设置中心 - Future Module（待后续版本开发）")
 
 conn.close()
