@@ -123,7 +123,12 @@ tabs = st.tabs(["🏠 首页", "📂 文件", "📋 软件", "📑 磁盘", "�
 # ===== TAB 0: HOME =====
 with tabs[0]:
     st.header("数字健康评分")
-    score = calc_health(conn)
+    if "cached_score" not in st.session_state:
+        st.session_state.cached_score = calc_health(conn)
+    score = st.session_state.cached_score
+    if st.button("🔄 刷新评分"):
+        st.session_state.cached_score = calc_health(conn)
+        st.rerun()
     if score:
         col_a, col_b = st.columns([1, 2])
         with col_a:
@@ -150,9 +155,6 @@ with tabs[0]:
             st.success("✅ 各项指标良好")
         for s in suggestions:
             st.write(s)
-    st.divider()
-    if st.button("🔄 刷新评分"):
-        st.rerun()
 
 @st.cache_data(ttl=300)
 def _get_file_stats(db_path):
@@ -180,22 +182,23 @@ with tabs[1]:
         df = pd.read_sql_query(f"SELECT file_name,file_path,last_modified,file_size FROM files WHERE file_name LIKE ? {SHORTCUT_FILTER} ORDER BY file_size DESC LIMIT 50", conn, params=[f"%{kw}%"])
         st.caption(f"找到 {len(df)} 条")
         if not df.empty:
-            h1,h2,h3,h4 = st.columns([0.8, 3, 1.2, 1])
-            h1.markdown("**删除**"); h2.markdown("**文件名**"); h3.markdown("**日期**"); h4.markdown("**大小(MB)**")
+            h1,h2,h3,h4,h5 = st.columns([0.8, 2.5, 2.5, 1.2, 1])
+            h1.markdown("**删除**"); h2.markdown("**文件名**"); h3.markdown("**所在目录**"); h4.markdown("**日期**"); h5.markdown("**大小**")
             st.divider()
             for i, row in df.iterrows():
-                c1,c2,c3,c4 = st.columns([0.8, 3, 1.2, 1])
+                c1,c2,c3,c4,c5 = st.columns([0.8, 2.5, 2.5, 1.2, 1])
                 if c1.button("🗑️", key=f"fsdel_{i}"):
                     ok, msg = _safe_delete(row["file_path"])
                     if ok: st.success("已删除"); st.rerun()
                     else: st.error(msg)
                 if c2.button(str(row["file_name"]), key=f"fsopen_{i}"):
                     _open_file(row["file_path"])
-                c3.write(_format_date(row["last_modified"]))
-                c4.write(_format_size(row["file_size"]))
+                c3.write(os.path.dirname(row["file_path"]) if row["file_path"] else "-")
+                c4.write(_format_date(row["last_modified"]))
+                c5.write(_format_size(row["file_size"]))
     st.divider()
     st.header("🔧 重复文件")
-    df_dup = pd.read_sql_query("""SELECT file_name, file_size, COUNT(*) AS dc, MIN(file_path) AS keep_path, MAX(file_path) AS del_path FROM files GROUP BY file_name, file_size HAVING COUNT(*) > 1 ORDER BY dc DESC LIMIT 500""", conn)
+    df_dup = pd.read_sql_query("""SELECT file_name, file_size, COUNT(*) AS dc, MIN(file_path) AS keep_path, MIN(last_modified) AS keep_date, MAX(file_path) AS del_path, MAX(last_modified) AS del_date FROM files GROUP BY file_name, file_size HAVING COUNT(*) > 1 AND file_size > 0 ORDER BY dc DESC LIMIT 50""", conn)
     if not df_dup.empty:
         total_saved_bytes = int((df_dup["file_size"] * (df_dup["dc"] - 1)).sum())
         total_groups = cur.execute("SELECT COUNT(*) FROM (SELECT 1 FROM files GROUP BY file_name, file_size HAVING COUNT(*) > 1)").fetchone()[0]
@@ -247,13 +250,13 @@ with tabs[1]:
             if c4.button(str(row["file_name"]), key=f"dup_open_{st.session_state.dup_page}_{j}"):
                 _open_file(row["keep_path"])
             c5.write(os.path.dirname(row["del_path"]) if row["del_path"] else "-")
-            c6.write(_format_date(""))
+            c6.write(_format_date(row["del_date"]))
             c7.write(_format_size(row["file_size"]))
     else:
         st.info("无重复文件")
     st.divider()
     st.header("📦 Top 100 大文件")
-    df_big = pd.read_sql_query(f"SELECT file_name,file_path,last_modified,file_size FROM files WHERE 1=1 {SHORTCUT_FILTER} ORDER BY file_size DESC LIMIT 100", conn)
+    df_big = pd.read_sql_query(f"SELECT file_name,file_path,last_modified,file_size FROM files WHERE file_size > 0 {SHORTCUT_FILTER} ORDER BY file_size DESC LIMIT 100", conn)
     if not df_big.empty:
         sel_big = "big_checked"
         for i in range(len(df_big)):
@@ -294,7 +297,7 @@ with tabs[1]:
     st.header("🕐 长期未使用文件")
     order_old = st.radio("排序", ["最久未用（旧→新）", "最近修改（新→旧）"], horizontal=True, key="old_sort")
     old_order = "ASC" if "最久" in order_old else "DESC"
-    df_old = pd.read_sql_query(f"SELECT file_name,file_path,last_modified,file_size FROM files WHERE 1=1 AND NOT (file_path LIKE '%Windows%' OR file_path LIKE '%System32%' OR file_name IN ('pagefile.sys','hiberfil.sys','swapfile.sys')) {SHORTCUT_FILTER} ORDER BY last_modified {old_order} LIMIT 100", conn)
+    df_old = pd.read_sql_query(f"SELECT file_name,file_path,last_modified,file_size FROM files WHERE file_size > 0 AND NOT (file_path LIKE '%Windows%' OR file_path LIKE '%System32%' OR file_name IN ('pagefile.sys','hiberfil.sys','swapfile.sys')) {SHORTCUT_FILTER} ORDER BY last_modified {old_order} LIMIT 100", conn)
     if not df_old.empty:
         total_old_bytes = int(df_old["file_size"].sum())
         st.caption(f"前100个最久未使用, 共 {_format_size(total_old_bytes)}")
@@ -356,24 +359,24 @@ with tabs[2]:
             df_sw["install_date"] = df_sw["install_date"].apply(lambda x: _format_date(x) if pd.notna(x) else "-")
         st.caption(f"找到 {len(df_sw)} 条")
         if not df_sw.empty:
-            h1,h2,h3,h4,h5 = st.columns([0.7, 1, 2.5, 1, 2])
-            h1.markdown("**卸载**"); h2.markdown("**建议**"); h3.markdown("**软件名称**"); h4.markdown("**版本**"); h5.markdown("**安装路径**")
+            h1,h2,h3,h4,h5 = st.columns([0.5, 3, 1, 1.5])
+            h1.markdown("**卸载**"); h2.markdown("**软件名称**"); h3.markdown("**版本**"); h4.markdown("**安装日期**"); h5.markdown("**安装路径**")
             st.divider()
             for i, row in df_sw.iterrows():
-                c1,c2,c3,c4,c5 = st.columns([0.7, 1, 2.5, 1, 2])
+                c1,c2,c3,c4,c5 = st.columns([0.5, 3, 1, 1.5])
                 if c1.button("🗑️", key=f"sw_del_{i}"):
                     try:
                         subprocess.run(["winget", "uninstall", "--name", str(row["name"])], capture_output=True, timeout=30)
                         st.toast(f"已发起卸载: {row['name']}")
                     except Exception as e:
                         st.warning(f"卸载失败: {e}")
-                c2.write("-")
-                if c3.button(str(row["name"]), key=f"sw_open_{i}"):
+                if c2.button(str(row["name"]), key=f"sw_open_{i}"):
                     ip = row.get("install_path") or ""
                     launched, result = _launch_software(ip, str(row["name"]))
                     if launched: st.toast(f"启动: {row['name']}")
                     else: st.toast("无法启动: 无安装路径")
-                c4.write(str(row.get("version", "-")))
+                c3.write(str(row.get("version", "-")))
+                c4.write(str(row.get("install_date", "-")))
                 c5.write(str(row.get("install_path", "-") or "-"))
         else:
             st.info("无匹配软件")
@@ -389,7 +392,10 @@ with tabs[2]:
             checked_mv = [st.session_state[f"{sel_mv}_{i}"] for i in range(len(dup_sw))]
             if any(checked_mv):
                 to_uninstall = [str(dup_sw.iloc[i]["软件名称"]) for i, c in enumerate(checked_mv) if c]
-                if st.button(f"🗑️ 批量卸载选中 ({len(to_uninstall)}个)", key="mv_batch"):
+                names_str = "、".join(to_uninstall[:5])
+                if len(to_uninstall) > 5:
+                    names_str += f" 等{len(to_uninstall)}个"
+                if st.button(f"⚠️ 确认批量卸载 ({len(to_uninstall)}个): {names_str}", key="mv_batch_confirm"):
                     for name in to_uninstall:
                         try:
                             subprocess.run(["winget", "uninstall", "--name", name], capture_output=True, timeout=30)
@@ -476,22 +482,32 @@ with tabs[3]:
 # ===== TAB 4: STORAGE =====
 with tabs[4]:
     st.header("📊 存储空间分析")
-    results = []
-    for name, label, dpath in STORAGE_DIRS:
-        dpath_norm = os.path.normpath(dpath)
-        if os.path.exists(dpath_norm):
-            total_size = 0; file_count = 0
-            for dirpath, _, filenames in os.walk(dpath_norm):
-                for fn in filenames:
-                    fp = os.path.join(dirpath, fn)
-                    try:
-                        if os.path.exists(fp): total_size += os.path.getsize(fp); file_count += 1
-                    except: pass
-            results.append({"目录": label, "路径": dpath, "文件数": file_count, "大小(MB)": round(total_size/1048576, 1)})
-        else:
-            results.append({"目录": label, "路径": dpath, "文件数": 0, "大小(MB)": 0})
-    df_st = pd.DataFrame(results).sort_values("大小(MB)", ascending=False)
-    st.dataframe(df_st, use_container_width=True, hide_index=True)
+    if "cached_storage" not in st.session_state:
+        st.session_state.cached_storage = None
+    if st.button("🔄 刷新存储扫描", key="store_refresh"):
+        st.session_state.cached_storage = None
+        st.rerun()
+    if st.session_state.cached_storage is not None:
+        df_st = st.session_state.cached_storage
+        st.dataframe(df_st, use_container_width=True, hide_index=True)
+    else:
+        results = []
+        for name, label, dpath in STORAGE_DIRS:
+            dpath_norm = os.path.normpath(dpath)
+            if os.path.exists(dpath_norm):
+                total_size = 0; file_count = 0
+                for dirpath, _, filenames in os.walk(dpath_norm):
+                    for fn in filenames:
+                        fp = os.path.join(dirpath, fn)
+                        try:
+                            if os.path.exists(fp): total_size += os.path.getsize(fp); file_count += 1
+                        except: pass
+                results.append({"目录": label, "路径": dpath, "文件数": file_count, "大小(MB)": round(total_size/1048576, 1)})
+            else:
+                results.append({"目录": label, "路径": dpath, "文件数": 0, "大小(MB)": 0})
+        df_st = pd.DataFrame(results).sort_values("大小(MB)", ascending=False)
+        st.session_state.cached_storage = df_st
+        st.dataframe(df_st, use_container_width=True, hide_index=True)
 
 # ===== TAB 5: DIGITAL ASSETS =====
 with tabs[5]:
