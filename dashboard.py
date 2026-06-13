@@ -228,22 +228,25 @@ with tabs[1]:
                 for i in range(len(df_dup_page)):
                     st.session_state[f"{sel_key}_{i}"] = False
                 st.rerun()
-        h1,h2,h3,h4,h5,h6 = st.columns([0.3, 1, 0.7, 3, 1.2, 1])
-        h1.markdown("**选**"); h2.markdown("**建议**"); h3.markdown("**删除**"); h4.markdown("**文件名**"); h5.markdown("**日期**"); h6.markdown("**大小(MB)**")
+        h1,h2,h3,h4,h5,h6 = st.columns([0.3, 1, 0.7, 2.5, 2.5, 1.2, 1])
+        h1.markdown("**选**"); h2.markdown("**建议**"); h3.markdown("**删除**"); h4.markdown("**文件名**"); h5.markdown("**所在目录**"); h6.markdown("**日期**"); h7.markdown("**大小**")
         st.divider()
         for j, (_, row) in enumerate(df_dup_page.iterrows()):
-            c1,c2,c3,c4,c5,c6 = st.columns([0.3, 1, 0.7, 3, 1.2, 1])
+            c1,c2,c3,c4,c5,c6,c7 = st.columns([0.3, 1, 0.7, 2.5, 2.5, 1.2, 1])
             key = f"{sel_key}_{j}"
             st.session_state[key] = c1.checkbox("☐", key=f"dup_cb_{st.session_state.dup_page}_{j}", value=st.session_state[key], label_visibility="collapsed")
             c2.write("建议保留")
-            if c3.button("🗑️", key=f"dup_del_{st.session_state.dup_page}_{j}"):
+            # Check if del_path exists before offering delete
+            del_exists, del_label = _file_exists(row["del_path"])
+            if c3.button("🗑️", key=f"dup_del_{st.session_state.dup_page}_{j}", disabled=not del_exists):
                 ok, msg = _safe_delete(row["del_path"])
                 if ok: st.success("已删除"); st.rerun()
                 else: st.error(msg)
             if c4.button(str(row["file_name"]), key=f"dup_open_{st.session_state.dup_page}_{j}"):
                 _open_file(row["keep_path"])
-            c5.write(_format_date(""))
-            c6.write(_format_size(row["file_size"]))
+            c5.write(os.path.dirname(row["del_path"]) if row["del_path"] else "-")
+            c6.write(_format_date(""))
+            c7.write(_format_size(row["file_size"]))
     else:
         st.info("无重复文件")
     st.divider()
