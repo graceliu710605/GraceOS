@@ -184,6 +184,8 @@ with tabs[1]:
     kw = st.text_input("搜索文件名关键字", placeholder="如: .pdf, 报告...", key="fs_kw")
     if kw:
         df = pd.read_sql_query(f"SELECT file_name,file_path,last_modified,file_size FROM files WHERE file_name LIKE ? AND file_size > 0 {SHORTCUT_FILTER} ORDER BY file_size DESC LIMIT 50", conn, params=[f"%{kw}%"])
+        if not df.empty:
+            df = df[df["file_path"].apply(lambda p: os.path.exists(p))]
         st.caption(f"找到 {len(df)} 条")
         if not df.empty:
             h1,h2,h3,h4,h5 = st.columns([0.8, 2.5, 2.5, 1.2, 1])
@@ -205,6 +207,8 @@ with tabs[1]:
     df_dup = pd.read_sql_query("""SELECT file_name, file_size, COUNT(*) AS dc, MIN(file_path) AS keep_path, MIN(last_modified) AS keep_date, MAX(file_path) AS del_path, MAX(last_modified) AS del_date FROM files GROUP BY file_name, file_size HAVING COUNT(*) > 1 AND file_size > 0 ORDER BY dc DESC LIMIT 50""", conn)
     if not df_dup.empty:
         total_saved_bytes = int((df_dup["file_size"] * (df_dup["dc"] - 1)).sum())
+        # Filter: only show files that actually exist on disk
+        df_dup = df_dup[df_dup["del_path"].apply(lambda p: os.path.exists(p))]
         total_groups = cur.execute("SELECT COUNT(*) FROM (SELECT 1 FROM files GROUP BY file_name, file_size HAVING COUNT(*) > 1)").fetchone()[0]
         page_size = 50
         if "dup_page" not in st.session_state:
@@ -262,6 +266,7 @@ with tabs[1]:
     st.header("📦 Top 100 大文件")
     df_big = pd.read_sql_query(f"SELECT file_name,file_path,last_modified,file_size FROM files WHERE file_size > 0 {SHORTCUT_FILTER} ORDER BY file_size DESC LIMIT 100", conn)
     if not df_big.empty:
+        df_big = df_big[df_big["file_path"].apply(lambda p: os.path.exists(p))]
         sel_big = "big_checked"
         for i in range(len(df_big)):
             if f"{sel_big}_{i}" not in st.session_state:
@@ -303,6 +308,7 @@ with tabs[1]:
     old_order = "ASC" if "最久" in order_old else "DESC"
     df_old = pd.read_sql_query(f"SELECT file_name,file_path,last_modified,file_size FROM files WHERE file_size > 0 AND NOT (file_path LIKE '%Windows%' OR file_path LIKE '%System32%' OR file_name IN ('pagefile.sys','hiberfil.sys','swapfile.sys')) {SHORTCUT_FILTER} ORDER BY last_modified {old_order} LIMIT 100", conn)
     if not df_old.empty:
+        df_old = df_old[df_old["file_path"].apply(lambda p: os.path.exists(p))]
         total_old_bytes = int(df_old["file_size"].sum())
         st.caption(f"前100个最久未使用, 共 {_format_size(total_old_bytes)}")
         sel_old = "old_checked"
@@ -361,6 +367,7 @@ with tabs[2]:
         df_sw = pd.read_sql_query(f"SELECT name, install_date, install_path, version FROM software {wc} ORDER BY {oc} LIMIT 100", conn, params=params_sw)
         if not df_sw.empty:
             df_sw["install_date"] = df_sw["install_date"].apply(lambda x: _format_date(x) if pd.notna(x) else "-")
+            df_sw = df_sw[df_sw["install_path"].apply(lambda p: bool(p) and os.path.exists(p))]
         st.caption(f"找到 {len(df_sw)} 条")
         if not df_sw.empty:
             h1,h2,h3,h4,h5 = st.columns([0.5, 3, 1, 1.5])
