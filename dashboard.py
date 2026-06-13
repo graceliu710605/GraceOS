@@ -184,26 +184,44 @@ with tabs[1]:
     if not df_dup.empty:
         total_groups = len(df_dup)
         total_saved_bytes = int((df_dup["file_size"] * (df_dup["dc"] - 1)).sum())
-        st.caption(f"共 {total_groups} 组, 总计可释放约 {_format_size(total_saved_bytes)}")
+        
+        # Pagination: max 50 groups per page
+        page_size = 50
+        if "dup_page" not in st.session_state:
+            st.session_state.dup_page = 0
+        total_pages = max(1, (total_groups + page_size - 1) // page_size)
+        start = st.session_state.dup_page * page_size
+        end = min(start + page_size, total_groups)
+        df_dup_page = df_dup.iloc[start:end]
+        
+        pc1, pc2, pc3 = st.columns([1, 2, 1])
+        if pc1.button("◀ 上一页", disabled=st.session_state.dup_page <= 0, key="dup_prev"):
+            st.session_state.dup_page -= 1; st.rerun()
+        pc2.write(f"第 {st.session_state.dup_page+1}/{total_pages} 页  (共 {total_groups} 组)")
+        if pc3.button("下一页 ▶", disabled=st.session_state.dup_page >= total_pages-1, key="dup_next"):
+            st.session_state.dup_page += 1; st.rerun()
+        
+        page_bytes = int((df_dup_page["file_size"] * (df_dup_page["dc"] - 1)).sum())
+        st.caption(f"本页保留一份可释放 {_format_size(page_bytes)}   |   总计可释放 {_format_size(total_saved_bytes)}")
         sel_key = "dup_checked"
-        for i in range(len(df_dup)):
+        for i in range(len(df_dup_page)):
             if f"{sel_key}_{i}" not in st.session_state:
                 st.session_state[f"{sel_key}_{i}"] = False
-        checked = [st.session_state[f"{sel_key}_{i}"] for i in range(len(df_dup))]
+        checked = [st.session_state[f"{sel_key}_{i}"] for i in range(len(df_dup_page))]
         if any(checked):
-            to_del = [df_dup.iloc[i]["del_path"] for i, c in enumerate(checked) if c]
-            del_bytes = sum(df_dup.iloc[i]["file_size"] for i, c in enumerate(checked) if c)
+            to_del = [df_dup_page.iloc[i]["del_path"] for i, c in enumerate(checked) if c]
+            del_bytes = sum(df_dup_page.iloc[i]["file_size"] for i, c in enumerate(checked) if c)
             if st.button(f"🗑️ 批量删除选中 ({len(to_del)}组, ~{_format_size(del_bytes)})", key="dup_batch"):
                 ok, fail, skip = _safe_delete_batch(to_del)
                 if fail == 0 and skip == 0: st.success(f"已删除 {ok} 个")
                 else: st.warning(f"{ok} 成功, {fail} 失败, {skip} 跳过(文件不存在)")
-                for i in range(len(df_dup)):
+                for i in range(len(df_dup_page)):
                     st.session_state[f"{sel_key}_{i}"] = False
                 st.rerun()
         h1,h2,h3,h4,h5,h6 = st.columns([0.3, 1, 0.7, 3, 1.2, 1])
         h1.markdown("**选**"); h2.markdown("**建议**"); h3.markdown("**删除**"); h4.markdown("**文件名**"); h5.markdown("**日期**"); h6.markdown("**大小(MB)**")
         st.divider()
-        for i, row in df_dup.iterrows():
+        for j, (_, row) in enumerate(df_dup_page.iterrows()):
             c1,c2,c3,c4,c5,c6 = st.columns([0.3, 1, 0.7, 3, 1.2, 1])
             key = f"{sel_key}_{i}"
             st.session_state[key] = c1.checkbox("☐", key=f"dup_cb_{i}", value=st.session_state[key], label_visibility="collapsed")
