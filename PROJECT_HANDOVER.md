@@ -27,16 +27,29 @@ streamlit run dashboard.py
 
 | 文件 | 用途 |
 |------|------|
-| `dashboard.py` | Streamlit Web 主应用 (~22KB) |
+| `dashboard.py` | Streamlit Web 主应用 (~26KB) |
 | `main.py` | CLI 扫描入口 |
 | `scanners/software_scanner.py` | 软件扫描 (winget + 注册表) |
 | `scanners/file_scanner.py` | 文件扫描 |
 | `scanners/disk_scanner.py` | 磁盘扫描 |
 | `analyzers/health_scorer.py` | 健康评分引擎 |
-| `PROJECT_STATUS.md` | 项目当前状态 |
-| `ROADMAP.md` | 路线图 |
-| `CHANGELOG.md` | 变更记录 |
-| `DEVELOPMENT_RULES.md` | 开发规范 |
+
+## 文档导航
+
+| 文档 | 位置 | 用途 |
+|------|------|------|
+| 项目状态 | `PROJECT_STATUS.md` | 当前版本/完成项/已知问题 |
+| 路线图 | `ROADMAP.md` | V1→V4 规划 |
+| 变更日志 | `CHANGELOG.md` | 所有版本变更 |
+| 开发规范 | `DEVELOPMENT_RULES.md` | 开发流程/安全/发布规范 |
+| 当前 Sprint | `CURRENT_SPRINT.md` | 当前开发任务 |
+| 文件树 | `PROJECT_FILE_TREE.md` | 完整目录结构 |
+| 产品需求 | `docs/PRD.md` | PRD |
+| 数据库设计 | `docs/DATABASE.md` | 数据库 Schema |
+| 商业计划 | `docs/BUSINESS_PLAN.md` | 商业分析 |
+| Beta 反馈 | `docs/BETA_USER_FEEDBACK.md` | 用户反馈汇总 |
+| 文档模板 | `docs/templates/` | 各类文档模板 |
+| 历史归档 | `docs/archive/` | V1/V2 旧版设计文档 |
 
 ## Git 信息
 
@@ -44,7 +57,6 @@ streamlit run dashboard.py
 |------|-----|
 | 仓库路径 | `e:\知识库obsidian\02_Projects\graceos\05_Code\GraceOS_V1` |
 | 分支 | main |
-| 远程 | `graceliu710605/GraceOS` (可能不可达) |
 
 ## 安装构建
 
@@ -54,24 +66,16 @@ cd setup_build
 makensis setup.nsi   # 生成 Setup.exe
 ```
 
-## 冻结模块
+## 冻结模块 (Tab 5-9)
 
-以下模块不在此版本开发范围，显示 "Future Module":
-- 备份中心 (Tab 5)
-- 项目管理中心 (Tab 6)
-- 知识库中心 (Tab 7)
-- Prompt 管理中心 (Tab 8)
-- 设置中心 (Tab 9)
+备份中心 / 项目管理中心 / 知识库中心 / Prompt 管理中心 / 设置中心 — 显示 "Future Module"
 
 ## V3 冻结功能
 
-以下功能已明确进入 V3 路线图，当前版本禁止开发:
-- 软件最后运行时间
-- GitHub/B站/Youtube/小红书资产管理
-- 云资产管理 (百度网盘等)
+软件最后运行时间 / GitHub/B站/Youtube/小红书 / 云资产管理 — 禁止当前版本开发
 
 ## 设计原则
 
-- 闭环: 发现问题 → 分析问题 → 给出建议 → 执行处理
-- 安全: 删除移至 E:\回收站，系统路径自动保护
-- 稳定性优先: 禁止新增大型功能，仅处理可用性问题
+- 闭环: 发现问题 -> 分析问题 -> 给出建议 -> 执行处理
+- 安全: 删除移至回收站，系统路径自动保护
+- 稳定: 禁止新增大型功能，仅处理可用性问题

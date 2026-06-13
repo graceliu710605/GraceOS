@@ -1,5 +1,15 @@
 # Changelog
 
+
+## 2026-06-13 — 文档结构整理
+- 新增 `docs/templates/`：存放所有文档模板
+- 新增 `docs/archive/`：存放 V1/V2 历史设计文档
+- 新增 `CURRENT_SPRINT.md`：当前 Sprint 任务
+- 新增 `PROJECT_FILE_TREE.md`：完整目录结构
+- 更新 `PROJECT_HANDOVER.md`：补充文档导航
+- 根目录模板文件移至 `docs/templates/`
+- 14 份历史文档移至 `docs/archive/`
+
 ## [V2.1] - 2026-06-13
 
 ### P1: 首页导航修复
