@@ -1,4 +1,4 @@
-﻿# Changelog
+# Changelog
 
 ## [V2.1] - 2026-06-13
 

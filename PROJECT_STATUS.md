@@ -1,4 +1,4 @@
-﻿<!--
+<!--
   PROJECT_STATUS.md - GraceOS V2.1
   生成日期: 2026-06-13
 -->

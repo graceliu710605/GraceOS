@@ -1,4 +1,4 @@
-﻿"""
+"""
 个人数字资产管家 (GraceOS V2.1)
 Asset Management Platform: Analyze -> Suggest -> Execute
 """

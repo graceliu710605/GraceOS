@@ -1,4 +1,4 @@
-﻿# V2.1 Sprint 报告
+# V2.1 Sprint 报告
 
 **日期**: 2026-06-13  
 **来源**: BETA_USER_FEEDBACK.md  
