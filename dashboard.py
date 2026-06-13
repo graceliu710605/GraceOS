@@ -103,8 +103,9 @@ st.set_page_config(page_title="个人数字资产管家", layout="wide")
 st.title("个人数字资产管家")
 conn = sqlite3.connect(DB_FILE)
 cur = conn.cursor()
-tabs = st.tabs(["🏠 首页", "📂 文件", "📋 软件", "📑 磁盘", "📊 存储", "💾 备份", "📁 项目", "🧠 知识库", "📝 Prompt", "⚙️ 设置"])
+tabs = st.tabs(["🏠 首页", "📂 文件", "📋 软件", "📑 磁盘", "📊 存储", "🌐 资产", "💾 备份", "📁 项目", "🧠 知识库", "📝 Prompt", "⚙️ 设置"])
 
+import webbrowser as _webbrowser
 # ===== TAB 0: HOME =====
 with tabs[0]:
     st.header("数字健康评分")
@@ -442,8 +443,90 @@ with tabs[4]:
     df_st = pd.DataFrame(results).sort_values("大小(MB)", ascending=False)
     st.dataframe(df_st, use_container_width=True, hide_index=True)
 
-# ===== FUTURE TABS =====
-for i, (tab, name) in enumerate([(tabs[5], "备份中心"), (tabs[6], "项目管理中心"), (tabs[7], "知识库中心"), (tabs[8], "Prompt管理中心"), (tabs[9], "设置中心")]):
+# ===== TAB 5: DIGITAL ASSETS =====
+with tabs[5]:
+    st.header("🌐 数字资产中心")
+    df_assets = pd.read_sql_query("SELECT * FROM digital_assets WHERE is_enabled=1 ORDER BY sort_order, name", conn)
+    categories = sorted(df_assets["category"].unique().tolist())
+    
+    col_side, col_main = st.columns([1.5, 4.5])
+    
+    with col_side:
+        st.subheader("分类")
+        if st.button("📋 全部", key="da_all", use_container_width=True):
+            st.session_state.da_cat = "全部"
+        for cat in categories:
+            cnt = len(df_assets[df_assets["category"] == cat])
+            if st.button(f"{cat} ({cnt})", key=f"da_cat_{cat}", use_container_width=True):
+                st.session_state.da_cat = cat
+        st.divider()
+        with st.expander("➕ 新增分类"):
+            new_cat = st.text_input("新分类名", key="da_new_cat")
+            if st.button("创建分类", key="da_create_cat") and new_cat:
+                cur.execute("INSERT INTO digital_assets (category,name,url,created_at,updated_at) VALUES (?,'','',datetime('now','localtime'),datetime('now','localtime'))", (new_cat,))
+                conn.commit()
+                st.success(f"分类 {new_cat} 已创建")
+                st.rerun()
+    
+    with col_main:
+        sel_cat = st.session_state.get("da_cat", "全部")
+        df_view = df_assets[df_assets["category"] == sel_cat] if sel_cat != "全部" else df_assets
+        st.caption(f"共 {len(df_view)} 条")
+        
+        if st.button("➕ 新增资产", key="da_add_btn"):
+            st.session_state.da_show_form = True
+            st.session_state.da_edit_id = None
+        
+        if st.session_state.get("da_show_form"):
+            edit_id = st.session_state.get("da_edit_id")
+            row = df_assets[df_assets["id"] == edit_id].iloc[0] if edit_id and len(df_assets[df_assets["id"] == edit_id]) > 0 else None
+            st.subheader(("编辑: "+row["name"]) if row is not None else "新增资产")
+            with st.form("da_form"):
+                name = st.text_input("名称 *", value=row["name"] if row is not None else "", key="da_f_name")
+                url = st.text_input("网址 *", value=row["url"] if row is not None else "", key="da_f_url")
+                cat_idx = categories.index(row["category"]) if row is not None and row["category"] in categories else 0
+                cat = st.selectbox("分类 *", categories, index=cat_idx, key="da_f_cat")
+                uname = st.text_input("账号", value=row["username"] if row is not None else "", key="da_f_uname")
+                remark = st.text_input("备注", value=row["remark"] if row is not None else "", key="da_f_remark")
+                c1, c2 = st.columns(2)
+                saved = c1.form_submit_button("💾 保存")
+                cancelled = c2.form_submit_button("取消")
+                if saved and name and url:
+                    now = pd.Timestamp.now().isoformat()
+                    if edit_id and row is not None:
+                        cur.execute("UPDATE digital_assets SET name=?,url=?,category=?,username=?,remark=?,updated_at=? WHERE id=?", (name,url,cat,uname,remark,now,edit_id))
+                    else:
+                        cur.execute("INSERT INTO digital_assets (category,name,url,username,remark,created_at,updated_at) VALUES (?,?,?,?,?,?,?)", (cat,name,url,uname,remark,now,now))
+                    conn.commit()
+                    st.session_state.da_show_form = False; st.session_state.da_edit_id = None
+                    st.rerun()
+                if cancelled:
+                    st.session_state.da_show_form = False; st.session_state.da_edit_id = None
+                    st.rerun()
+        
+        if not df_view.empty:
+            for _, row in df_view.iterrows():
+                c1,c2,c3,c4,c5 = st.columns([2.5, 3, 1.2, 0.8, 0.8])
+                c1.write(f"**{row['name']}**")
+                c2.write(str(row['url'])[:50] + ("..." if len(str(row['url'])) > 50 else ""))
+                c3.write(str(row['username']) if row['username'] else "—")
+                if c4.button("🚀", key=f"da_open_{row['id']}"):
+                    _webbrowser.open(row['url'])
+                if c5.button("✏️", key=f"da_edit_{row['id']}"):
+                    st.session_state.da_show_form = True; st.session_state.da_edit_id = row['id']; st.rerun()
+                with st.expander(f"详情"):
+                    st.write(f"URL: {row['url']}")
+                    st.write(f"分类: {row['category']}")
+                    st.write(f"账号: {row['username'] or '—'}")
+                    st.write(f"备注: {row['remark'] or '—'}")
+                    if st.button("🗑️ 删除", key=f"da_del_{row['id']}"):
+                        cur.execute("DELETE FROM digital_assets WHERE id=?", (row['id'],)); conn.commit()
+                        st.success("已删除"); st.rerun()
+        else:
+            st.info("暂无资产")
+
+# ===== TABS 6-9: FUTURE MODULES =====
+for i, (tab, name) in enumerate([(tabs[6], "备份中心"), (tabs[7], "项目管理中心"), (tabs[8], "知识库中心"), (tabs[9], "Prompt管理中心"), (tabs[10], "设置中心")]):
     with tab:
         st.header(f"🚧 {name}")
         st.info(f"{name} - Future Module（待开发）")
