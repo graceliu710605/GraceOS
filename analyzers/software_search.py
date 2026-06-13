@@ -13,9 +13,9 @@ def search(keyword):
     result = []
 
     for item in data:
-
-        if keyword.lower() in item["raw"].lower():
-
-            result.append(item["raw"])
+        # Search across all fields: name, id, publisher
+        search_str = " ".join(str(v) for v in [item.get("name",""), item.get("id",""), item.get("publisher","")])
+        if keyword.lower() in search_str.lower():
+            result.append(item.get("name", str(item)))
 
     return result
