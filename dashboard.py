@@ -374,11 +374,11 @@ with tabs[2]:
             df_sw = df_sw[df_sw["install_path"].apply(lambda p: isinstance(p, str) and bool(p) and os.path.exists(p))]
         st.caption(f"找到 {len(df_sw)} 条")
         if not df_sw.empty:
-            h1,h2,h3,h4,h5 = st.columns([0.5, 3, 1, 1.5])
+            h1,h2,h3,h4,h5 = st.columns([0.5, 3, 1, 1.5, 2])
             h1.markdown("**卸载**"); h2.markdown("**软件名称**"); h3.markdown("**版本**"); h4.markdown("**安装日期**"); h5.markdown("**安装路径**")
             st.divider()
             for i, row in df_sw.iterrows():
-                c1,c2,c3,c4,c5 = st.columns([0.5, 3, 1, 1.5])
+                c1,c2,c3,c4,c5 = st.columns([0.5, 3, 1, 1.5, 2])
                 if c1.button("🗑️", key=f"sw_del_{i}"):
                     try:
                         subprocess.run(["winget", "uninstall", "--name", str(row["name"])], capture_output=True, timeout=30)
