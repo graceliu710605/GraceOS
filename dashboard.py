@@ -371,7 +371,7 @@ with tabs[2]:
         df_sw = pd.read_sql_query(f"SELECT name, install_date, install_path, version FROM software {wc} ORDER BY {oc} LIMIT 100", conn, params=params_sw)
         if not df_sw.empty:
             df_sw["install_date"] = df_sw["install_date"].apply(lambda x: _format_date(x) if pd.notna(x) else "-")
-            df_sw = df_sw[df_sw["install_path"].apply(lambda p: bool(p) and os.path.exists(p))]
+            df_sw = df_sw[df_sw["install_path"].apply(lambda p: isinstance(p, str) and bool(p) and os.path.exists(p))]
         st.caption(f"找到 {len(df_sw)} 条")
         if not df_sw.empty:
             h1,h2,h3,h4,h5 = st.columns([0.5, 3, 1, 1.5])
