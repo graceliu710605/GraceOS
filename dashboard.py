@@ -209,6 +209,7 @@ with tabs[1]:
         total_saved_bytes = int((df_dup["file_size"] * (df_dup["dc"] - 1)).sum())
         # Filter: only show files that actually exist on disk
         df_dup = df_dup[df_dup["del_path"].apply(lambda p: os.path.exists(p))]
+        df_dup = df_dup.reset_index(drop=True)
     if not df_dup.empty:
         page_size = 50
         total_groups = len(df_dup)
@@ -268,7 +269,7 @@ with tabs[1]:
     df_big = pd.read_sql_query(f"SELECT file_name,file_path,last_modified,file_size FROM files WHERE file_size > 0 {SHORTCUT_FILTER} ORDER BY file_size DESC LIMIT 100", conn)
     if not df_big.empty:
         df_big = df_big[df_big["file_path"].apply(lambda p: os.path.exists(p))]
-    if not df_big.empty:
+        df_big = df_big.reset_index(drop=True)
         sel_big = "big_checked"
         for i in range(len(df_big)):
             if f"{sel_big}_{i}" not in st.session_state:
@@ -311,7 +312,7 @@ with tabs[1]:
     df_old = pd.read_sql_query(f"SELECT file_name,file_path,last_modified,file_size FROM files WHERE file_size > 0 AND NOT (file_path LIKE '%Windows%' OR file_path LIKE '%System32%' OR file_name IN ('pagefile.sys','hiberfil.sys','swapfile.sys')) {SHORTCUT_FILTER} ORDER BY last_modified {old_order} LIMIT 100", conn)
     if not df_old.empty:
         df_old = df_old[df_old["file_path"].apply(lambda p: os.path.exists(p))]
-    if not df_old.empty:
+        df_old = df_old.reset_index(drop=True)
         total_old_bytes = int(df_old["file_size"].sum())
         st.caption(f"前100个最久未使用, 共 {_format_size(total_old_bytes)}")
         sel_old = "old_checked"
