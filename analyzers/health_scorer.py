@@ -5,7 +5,7 @@ GraceOS V2 Health Scorer
 import sqlite3
 from datetime import date
 
-DB_FILE = r"E:\创业项目\GraceOS\09_Database\graceos.db"
+DB_FILE = r"E:\知识库obsidian\02_Projects\graceos\09_Database\graceos.db"
 
 def calculate(conn=None):
     """计算健康评分（纯读），需要持久化时由调用方 commit"""

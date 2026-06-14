@@ -7,7 +7,7 @@
 
 ## 引用说明
 
-本项目遵循 `E:\创业项目\00_AI组织` 规范。
+本项目遵循 `E:\知识库obsidian\02_Projects\graceos\00_AI组织` 规范。
 
 | RULE | 位置 | 说明 |
 |------|------|------|
@@ -19,6 +19,7 @@
 | 035 | `AI_WORKFLOW.md` | Smoke Test |
 | 036 | `AI_WORKFLOW.md` | Root Cause Analysis |
 | 037 | `AI_WORKFLOW.md` | UI First |
+| 040 | `BUG_REPORTS/README.md` | Bug 生命周期管理 |
 
 ---
 

@@ -18,10 +18,10 @@ STORAGE_DIRS = [
     ("Documents", "文档", "C:/Users/Administrator/Documents"),
     ("WeChat Files", "微信文件", "D:/WeChat Files"),
     ("Obsidian", "知识库", "E:/知识库obsidian"),
-    ("Projects", "项目目录", "E:/创业项目"),
+    ("Projects", "项目目录", "E:/知识库obsidian/02_Projects/graceos"),
 ]
 
-DB_FILE = r"E:\创业项目\GraceOS\09_Database\graceos.db"
+DB_FILE = r"E:\知识库obsidian\02_Projects\graceos\09_Database\graceos.db"
 ARCHIVE_DIR = r"E:\归档"
 RECYCLE_DIR = r"E:\回收站"
 

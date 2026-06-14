@@ -14,16 +14,16 @@
 | 产品类型 | 个人数字资产管理系统 |
 | 技术栈 | Python + Streamlit + SQLite + NSIS |
 | 代码位置 | `e:\知识库obsidian\02_Projects\graceos\05_Code\GraceOS_V1` |
-| 数据库位置 | `E:\创业项目\GraceOS\09_Database\graceos.db` |
+| 数据库位置 | `E:\知识库obsidian\02_Projects\graceos\09_Database\graceos.db` |
 
 ## 组织规范
 
-本项目遵循 `E:\创业项目\00_AI组织` 中的组织规范与工作流程。详见：
+本项目遵循 `E:\知识库obsidian\02_Projects\graceos\00_AI组织` 中的组织规范与工作流程。详见：
 
 | 规范 | 位置 |
 |------|------|
-| 角色分工与职责边界 | `E:\创业项目\00_AI组织\01_组织架构\AI_TEAM.md` |
-| 工作流程与验收规则 | `E:\创业项目\00_AI组织\02_工作流程\AI_WORKFLOW.md` |
+| 角色分工与职责边界 | `E:\知识库obsidian\02_Projects\graceos\00_AI组织\01_组织架构\AI_TEAM.md` |
+| 工作流程与验收规则 | `E:\知识库obsidian\02_Projects\graceos\00_AI组织\02_工作流程\AI_WORKFLOW.md` |
 | 项目特有规则 | `PROJECT_OPERATING_RULES.md` |
 
 ## 快速启动

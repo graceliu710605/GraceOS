@@ -1,8 +1,8 @@
 import sqlite3
 import ijson
 
-JSON_FILE = r"E:\创业项目\GraceOS\09_Database\file_assets\file_inventory.json"
-DB_FILE = r"E:\创业项目\GraceOS\09_Database\graceos.db"
+JSON_FILE = r"E:\知识库obsidian\02_Projects\graceos\09_Database\file_assets\file_inventory.json"
+DB_FILE = r"E:\知识库obsidian\02_Projects\graceos\09_Database\graceos.db"
 
 print("连接数据库...")
 

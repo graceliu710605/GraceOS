@@ -1,6 +1,6 @@
 from pathlib import Path
 
-PROJECT_ROOT = Path(r"E:\创业项目\GraceOS")
+PROJECT_ROOT = Path(r"E:\知识库obsidian\02_Projects\graceos")
 
 DATABASE_DIR = PROJECT_ROOT / "09_Database"
 

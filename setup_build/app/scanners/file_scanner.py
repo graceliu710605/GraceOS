@@ -2,7 +2,7 @@ import os
 import json
 from datetime import datetime
 
-OUTPUT_FILE = r"E:\创业项目\GraceOS\09_Database\file_assets\file_inventory.json"
+OUTPUT_FILE = r"E:\知识库obsidian\02_Projects\graceos\09_Database\file_assets\file_inventory.json"
 
 SCAN_DRIVES = [
     "C:\\",

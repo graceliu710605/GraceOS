@@ -19,7 +19,7 @@ def scan():
     )
 
     output_dir = Path(
-        r"E:\创业项目\GraceOS\09_Database\disk_assets"
+        r"E:\知识库obsidian\02_Projects\graceos\09_Database\disk_assets"
     )
 
     output_dir.mkdir(parents=True, exist_ok=True)

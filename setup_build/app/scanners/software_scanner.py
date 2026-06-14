@@ -159,7 +159,7 @@ def scan():
     scan_time = datetime.now().isoformat()
     for sw in software_list: sw["scan_time"] = scan_time
     print(f"Found {len(software_list)} software packages")
-    output_dir = Path(r"E:\创业项目\GraceOS\09_Database\software_assets")
+    output_dir = Path(r"E:\知识库obsidian\02_Projects\graceos\09_Database\software_assets")
     output_dir.mkdir(parents=True, exist_ok=True)
     output_file = output_dir / "software_inventory.json"
     with open(output_file,"w",encoding="utf-8") as f:

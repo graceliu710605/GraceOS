@@ -2,7 +2,7 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 
-DB_FILE = r"E:\创业项目\GraceOS\09_Database\graceos.db"
+DB_FILE = r"E:\知识库obsidian\02_Projects\graceos\09_Database\graceos.db"
 
 st.set_page_config(
     page_title="GraceOS V3",

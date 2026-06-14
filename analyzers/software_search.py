@@ -3,7 +3,7 @@ import json
 def search(keyword):
 
     with open(
-        r"E:\创业项目\GraceOS\09_Database\software_assets\software_inventory.json",
+        r"E:\知识库obsidian\02_Projects\graceos\09_Database\software_assets\software_inventory.json",
         "r",
         encoding="utf-8"
     ) as f:

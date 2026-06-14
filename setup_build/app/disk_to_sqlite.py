@@ -8,8 +8,8 @@ import json
 import sqlite3
 from pathlib import Path
 
-DB_FILE = r"E:\创业项目\GraceOS\09_Database\graceos.db"
-JSON_FILE = r"E:\创业项目\GraceOS\09_Database\disk_assets\disk_inventory.json"
+DB_FILE = r"E:\知识库obsidian\02_Projects\graceos\09_Database\graceos.db"
+JSON_FILE = r"E:\知识库obsidian\02_Projects\graceos\09_Database\disk_assets\disk_inventory.json"
 
 
 def create_table(conn):
