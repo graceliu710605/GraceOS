@@ -8,7 +8,7 @@ from datetime import date
 DB_FILE = r"E:\创业项目\GraceOS\09_Database\graceos.db"
 
 def calculate(conn=None):
-    """计算并保存健康评分，返回评分字典"""
+    """计算健康评分（纯读），需要持久化时由调用方 commit"""
     close_later = False
     if conn is None:
         conn = sqlite3.connect(DB_FILE)
@@ -55,17 +55,6 @@ def calculate(conn=None):
         sw_score = max(0, min(100, 100 - min(sw_multi * 3, 100)))
 
         total = int((dup_score + unused_score + disk_score + sw_score) / 4)
-
-        cur.execute("""
-            INSERT INTO health_scores
-            (score_date, total_score, file_dup_score, file_unused_score, disk_score, sw_score,
-             dup_count, dup_files, dup_size_mb, unused_count, unused_size_mb,
-             c_usage_pct, sw_count, sw_multi_ver, created_at)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'))
-        """, (date.today().isoformat(), total, dup_score, unused_score, disk_score, sw_score,
-              dup_count, dup_files, dup_mb, unused_count, unused_mb,
-              c_pct, sw_count, sw_multi))
-        conn.commit()
 
         return {
             "total": total, "dup_score": dup_score, "unused_score": unused_score,

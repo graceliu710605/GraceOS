@@ -115,7 +115,7 @@ def _launch_software(install_path, sw_name):
 
 st.set_page_config(page_title="个人数字资产管家", layout="wide")
 st.title("个人数字资产管家")
-conn = sqlite3.connect(DB_FILE)
+conn = sqlite3.connect(DB_FILE, timeout=10)
 cur = conn.cursor()
 # P0 perf: ensure indexes exist (idempotent, skipped on subsequent starts)
 cur.execute("CREATE INDEX IF NOT EXISTS idx_files_name_size ON files(file_name, file_size)")
